@@ -1,427 +1,318 @@
-# Project Sentinel - Autonomous Trading Agent
+# Sentinel Trading Bot 🤖📈
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Markets](https://img.shields.io/badge/markets-US%20%7C%20India-blue)](.)
+**AI-Powered Paper Trading Dashboard for Indian Stock Markets (NSE/BSE)**
 
-## Overview
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.32+-red.svg)](https://streamlit.io/)
+[![Google Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4.svg)](https://ai.google.dev/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Project Sentinel** is an autonomous intraday trading agent built with a focus on robust risk management and realistic execution modeling. Supports both **US markets** (via Alpaca) and **Indian markets** (NSE/BSE via Zerodha).
-
-### 🎯 Core Modules
-
-1. **SignalSynchronizer** - Temporal alignment of signals from different data sources
-2. **SlippageSimulator** - Realistic order fill simulation with market-specific profiles
-3. **ConservativeRiskModel** - Pessimistic cost modeling and position sizing
-4. **Multi-Market Support** - Seamless switching between US and Indian markets
+![Sentinel Trading Bot](https://img.shields.io/badge/Status-Production%20Ready-success)
 
 ---
 
-## 🚨 Problems Solved
+## 🎯 Overview
 
-### Failure Point 1: Data Consistency Gap
-**Problem:** `yfinance` (1min delayed) vs web scraping (real-time) creates temporal mismatches  
-**Solution:** `SignalSynchronizer` aligns all signals to common time windows with staleness detection
+Sentinel is a **production-grade paper trading platform** that combines **Google Gemini AI** with real-time market data to help you learn stock trading without risking real money. Perfect for beginners, students, and anyone wanting to master the Indian stock market!
 
-### Failure Point 2: Paper Trading Illusion
-**Problem:** Paper fills are instant and perfect, unlike real market conditions  
-**Solution:** `SlippageSimulator` injects realistic slippage, spread costs, and partial fills
+### ✨ Key Features
 
-### Failure Point 3: Zero-Capital Trap
-**Problem:** Backtests underestimate costs, leading to over-optimistic results  
-**Solution:** `ConservativeRiskModel` applies pessimistic assumptions and minimum hurdle rates
-
----
-
-## 🎨 Interactive Dashboard (NEW!)
-
-**Zero-code interface** for Project Sentinel! Control everything through a beautiful web dashboard.
-
-### Quick Start
-
-```bash
-# Launch the dashboard
-run_dashboard.bat
-
-# Dashboard opens at: http://localhost:8501
-```
-
-### Features
-
-- **🏠 Home** - Market overview, live status, index quotes
-- **🔍 Discover** - One-click auto-discovery of trending Indian stocks
-- **📊 Analyze** - Deep stock analysis with charts and recommendations *(coming soon)*
-- **💼 Portfolio** - Live position tracking and P&L monitoring *(coming soon)*
-- **💰 Trade** - Execute trades with simple forms *(coming soon)*
-- **⚙️ Settings** - Configure risk parameters, no coding needed
-- **📈 Performance** - Analytics and performance tracking *(coming soon)*
-
-**See [DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md) for complete guide.**
-
----
-
-## 📦 Installation
-
-```bash
-# Clone the repository
-cd C:\Users\Karthi\Desktop\Agent
-
-# Install dependencies (Python 3.8+)
-pip install -r requirements.txt
-
-# Run tests
-python -m pytest tests/ -v
-```
+- 🤖 **AI-Powered Signals** - Gemini analyzes stocks and gives BUY/WAIT/AVOID recommendations
+- 📊 **Real-Time Data** - Live prices, charts, and news from NSE/BSE
+- 💼 **Portfolio Tracking** - Monitor your virtual holdings and P&L
+- 📈 **Technical Analysis** - RSI, MACD, Bollinger Bands, Volume analysis
+- 📰 **News Integration** - Stay updated with latest market news
+- 🎨 **Premium UI** - Clean, Groww-inspired design
+- ⏰ **Market Hours** - Realistic trading hours (9:15 AM - 3:30 PM IST)
 
 ---
 
 ## 🚀 Quick Start
 
-### Example 1: Signal Synchronization
+### Prerequisites
 
-```python
-from datetime import datetime, timedelta
-from sentinel import TimestampedSignal, SignalSynchronizer
+- Python 3.10 or higher
+- Google Gemini API key ([Get it free](https://aistudio.google.com/apikey))
 
-# Create synchronizer with 5-minute windows
-sync = SignalSynchronizer(window_size=timedelta(minutes=5))
-
-# Add signals from different sources
-price_signal = TimestampedSignal("PRICE", 150.25, datetime.utcnow())
-news_signal = TimestampedSignal("NEWS", 78.5, datetime.utcnow())
-
-sync.add_signal(price_signal)
-sync.add_signal(news_signal)
-
-# Get synchronized window
-window = sync.get_synchronized_window(required_types=["PRICE", "NEWS"])
-
-if window["status"] == "READY":
-    print(f"Signals synchronized: {window['signal_count']} signals")
-    # Make trading decision with aligned signals
-```
-
-### Example 2: Slippage Simulation
-
-```python
-from sentinel import MarketCondition, SlippageSimulator
-
-# Create simulator for normal market conditions
-simulator = SlippageSimulator(condition=MarketCondition.NORMAL)
-
-# Simulate a market order
-fill = simulator.simulate_fill(
-    order_type="MARKET",
-    side="BUY",
-    intended_price=150.0,
-    size=100,
-    symbol="AAPL"
-)
-
-print(f"Intended: ${fill.intended_price:.2f}")
-print(f"Actual Fill: ${fill.actual_fill_price:.4f}")
-print(f"Slippage Cost: ${fill.slippage_cost:.2f}")
-```
-
-### Example 3: Conservative Position Sizing
-
-```python
-from sentinel import ConservativeRiskModel
-
-# Create risk model with $10,000 account
-risk_model = ConservativeRiskModel(account_balance=10000.0)
-
-# Calculate safe position size
-shares, risk_params = risk_model.calculate_position_size(
-    entry_price=150.0,
-    stop_loss_price=147.0,  # 2% stop
-    confidence=0.8
-)
-
-print(f"Position: {shares} shares")
-print(f"Max Risk: ${risk_params.max_loss_amount:.2f}")
-print(f"Portfolio Exposure: {risk_params.portfolio_exposure_pct:.2f}%")
-```
-
-### Example 4: Indian Market Trading (🇮🇳 NEW!)
-
-```python
-# Set market to India in .env
-# MARKET_REGION=INDIA
-
-from sentinel import ProviderFactory, ConservativeRiskModel
-from sentinel.indian_market_config import is_market_open, IST
-from datetime import datetime
-
-# Initialize for Indian market
-provider = ProviderFactory(market_region="INDIA")
-price_provider = provider.get_price_provider()
-
-# Get NSE stock quote
-quote = await price_provider.get_quote("RELIANCE", exchange="NSE")
-print(f"RELIANCE: ₹{quote['price']:.2f}")
-
-# Risk model with INR
-risk_model = ConservativeRiskModel(
-    account_balance=100000.0,  # ₹1 lakh
-    market_region="INDIA",
-    currency="INR"
-)
-
-# Check market hours (IST)
-if is_market_open():
-    print("NSE is OPEN (9:15 AM - 3:30 PM IST)")
-```
-
-**See [INDIAN_MARKET_SETUP.md](INDIAN_MARKET_SETUP.md) for complete Indian market guide.**
-
----
-
-## 📚 Module Documentation
-
-### SignalSynchronizer
-
-**Purpose:** Align signals from different sources to common time windows
-
-**Key Features:**
-- Window-based temporal alignment (configurable window size)
-- Staleness detection (reject outdated signals)
-- Signal completeness validation (ensure all required signals present)
-- Automatic cleanup of stale signals
-
-**Configuration:**
-```python
-SignalSynchronizer(
-    window_size=timedelta(minutes=5),  # Time window size
-    max_buffer_size=1000,              # Max signals to buffer
-    cleanup_interval=10                # Cleanup frequency
-)
-```
-
-### SlippageSimulator
-
-**Purpose:** Inject realistic execution costs into paper trading
-
-**Key Features:**
-- Market condition profiles (NORMAL, VOLATILE, ILLIQUID, OPENING, CLOSING)
-- Bid-ask spread modeling
-- Market impact calculation (size-dependent)
-- Partial fill simulation
-- Cumulative cost tracking
-
-**Configuration:**
-```python
-SlippageSimulator(
-    condition=MarketCondition.NORMAL,  # Market regime
-    spread_bps=5.0,                    # Bid-ask spread (basis points)
-    enable_partial_fills=True          # Simulate partial fills
-)
-```
-
-**Slippage Profiles:**
-| Condition | Avg Slippage | Partial Fill Range |
-|-----------|--------------|-------------------|
-| NORMAL    | 0.10%        | 95-100%          |
-| VOLATILE  | 0.50%        | 85-100%          |
-| ILLIQUID  | 1.00%        | 70-95%           |
-| OPENING   | 0.80%        | 80-100%          |
-| CLOSING   | 0.60%        | 90-100%          |
-
-### ConservativeRiskModel
-
-**Purpose:** Conservative position sizing with pessimistic cost assumptions
-
-**Key Features:**
-- Hurdle rate filtering (0.5% minimum expected profit)
-- Multi-constraint position sizing (risk + exposure limits)
-- Confidence and volatility scaling
-- Trade validation against risk limits
-
-**Configuration:**
-```python
-ConservativeRiskModel(
-    account_balance=10000.0,
-    custom_assumptions={
-        "assumed_slippage": 0.002,     # 0.2% per trade
-        "hurdle_rate": 0.005           # 0.5% minimum profit
-    }
-)
-```
-
-**Risk Limits:**
-- Max position size: 5% of account
-- Max risk per trade: 1% of account
-- Hard stop loss: 2% from entry
-- Minimum hurdle rate: 0.5% expected profit after costs
-
----
-
-## 🧪 Testing
-
-Run the complete test suite:
+### Installation
 
 ```bash
-# Run all tests
-python -m pytest tests/ -v
+# Clone the repository
+git clone https://github.com/karthixcarlo/sentinel-trading-bot.git
+cd sentinel-trading-bot
 
-# Run specific module tests
-python -m pytest tests/test_signal_synchronizer.py -v
-python -m pytest tests/test_slippage_simulator.py -v
-python -m pytest tests/test_risk_model.py -v
+# Create virtual environment
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # macOS/Linux
 
-# Run with coverage
-python -m pytest tests/ --cov=sentinel --cov-report=html
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+copy .env.example .env
+# Edit .env and add your GOOGLE_API_KEY
 ```
 
-Run example scripts:
+### Running the Dashboard
 
 ```bash
-# Run all examples
-python examples/phase1_examples.py
+cd dashboard_v3
+streamlit run Home.py --server.port 8509
+```
 
-# Examples include:
-# 1. Signal synchronization demo
-# 2. Slippage simulation comparison
-# 3. Risk management scenarios
-# 4. Integrated trading workflow
+Open your browser to **http://localhost:8509**
+
+---
+
+## 📚 Features Walkthrough
+
+### 🏠 Home Dashboard
+- Portfolio snapshot with real-time P&L
+- Market status indicator
+- Watchlist preview
+- Recent orders history
+- Quick action buttons
+
+### 📊 Market Overview
+- Live NIFTY 50, SENSEX, BANKNIFTY indices
+- Market open/closed status
+- Portfolio summary
+
+### 🔍 Stock Discovery
+- **Top Gainers** - Best performing stocks
+- **Top Losers** - Worst performing stocks  
+- **Most Active** - High volume stocks
+- One-click analysis
+
+### 📈 Stock Analyzer (★ Main Feature)
+- **AI Signals** - BUY (🟢), WAIT (⚪), AVOID (🔴)
+- **Technical Indicators** - RSI, MACD, Bollinger Bands
+- **Interactive Charts** - Candlestick, volume, indicators
+- **News Feed** - Latest company news
+- **Quick Trade** - Place orders instantly
+- **Risk Management** - AI-suggested stop loss & targets
+
+### 💼 Portfolio Tracker
+- Current holdings with live prices
+- Unrealized P&L calculation
+- Order history
+- Performance metrics
+
+### ⚡ Trade Executor
+- Buy/Sell orders with quantity selection
+- Market hours validation
+- Real-time price fetching
+- Order confirmation feedback
+
+### ⚙️ Settings
+- Initial capital configuration
+- Watchlist management
+- CSV import support
+- Portfolio reset
+
+---
+
+## 🛠️ Technology Stack
+
+| Category | Technology |
+|----------|-----------|
+| **Frontend** | Streamlit, Custom CSS, Material Symbols |
+| **Backend** | Python 3.10+ |
+| **AI/ML** | Google Gemini 2.5 Flash |
+| **Data** | yfinance, BeautifulSoup4 |
+| **Libraries** | Pandas, NumPy, Pydantic |
+
+---
+
+## 🎨 UI Design
+
+Inspired by **Groww** app with:
+- Clean, minimal interface
+- Professional typography (DM Sans, JetBrains Mono)
+- Subtle animations
+- Card-based layouts
+- Material Symbols icons
+
+### Color Palette
+- 🟢 **Primary Green** (#00D09C) - BUY signals, success
+- 🔴 **Primary Red** (#EB5B3C) - AVOID signals, errors
+- ⚪ **Neutral Gray** (#8B92A0) - WAIT signals
+- ⚫ **Text** (#1A1D29) - Primary text
+
+---
+
+## 🧠 AI Trading Analyst
+
+### How It Works
+
+1. **Fetch Data** - Get technical indicators (RSI, MACD, Volume, Trend)
+2. **Scrape News** - Latest company news from web sources
+3. **AI Analysis** - Gemini evaluates all data holistically
+4. **Generate Signal** - Returns BUY/WAIT/AVOID with confidence score
+5. **Provide Reasoning** - Explains the decision
+6. **Risk Levels** - Suggests stop loss & take profit
+
+### Signal Framework
+
+| Signal | Color | Meaning | Criteria |
+|--------|-------|---------|----------|
+| **BUY** | 🟢 Green | Strong bullish opportunity | 2+ bullish signals, confidence ≥ 60% |
+| **WAIT** | ⚪ Gray | Mixed/unclear signals | Contradictory indicators, 40-60% confidence |
+| **AVOID** | 🔴 Red | Strong bearish signals | 2+ bearish signals, negative confidence ≥ 60% |
+
+---
+
+## 📖 Usage Guide
+
+### Basic Workflow
+
+1. **Discover** → Go to Stock Discovery, browse gainers/losers
+2. **Analyze** → Click "Analyze" to see AI signal & charts
+3. **Trade** → Use Quick Trade widget to place orders
+4. **Track** → Monitor portfolio in Portfolio page
+5. **Learn** → Review what works, refine your strategy
+
+### Best Practices
+
+- ✅ Start with ₹10,000 virtual capital
+- ✅ Follow AI signals and reasoning
+- ✅ Set stop losses (use AI suggestions)
+- ✅ Trade only during market hours (9:15 AM - 3:30 PM IST)
+- ✅ Diversify - don't put all capital in one stock
+- ✅ Review portfolio daily
+
+---
+
+## 📁 Project Structure
+
+```
+sentinel-trading-bot/
+├── dashboard_v3/              # Main Streamlit app
+│   ├── Home.py               # Landing page
+│   ├── pages/                # Multi-page app
+│   │   ├── 1_Market_Overview.py
+│   │   ├── 2_Stock_Discovery.py
+│   │   ├── 3_Stock_Analyzer.py
+│   │   ├── 4_Portfolio.py
+│   │   ├── 5_Trade_Executor.py
+│   │   └── 6_Settings.py
+│   ├── premium_theme.py      # Groww-inspired styling
+│   ├── market_hours.py       # Trading hours validation
+│   ├── navigation.py         # Top nav component
+│   └── news_loader.py        # Web scraper
+├── analyst_agent_gemini.py   # AI analyst (Gemini)
+├── requirements.txt          # Dependencies
+├── .env.example             # Environment template
+├── README.md                # This file
+└── PROJECT_DOCUMENTATION.md # Comprehensive docs (60+ pages)
 ```
 
 ---
 
-## 📊 Project Structure
+## 🔧 Configuration
 
+### Environment Variables
+
+Create a `.env` file:
+
+```bash
+GOOGLE_API_KEY=your_gemini_api_key_here
 ```
-Agent/
-├── sentinel/                    # Core package
-│   ├── __init__.py             # Package exports
-│   ├── signal_synchronizer.py  # Temporal alignment module
-│   ├── slippage_simulator.py   # Fill simulation module
-│   └── risk_model.py           # Position sizing module
-├── tests/                       # Unit tests
-│   ├── test_signal_synchronizer.py
-│   ├── test_slippage_simulator.py
-│   └── test_risk_model.py
-├── examples/                    # Usage examples
-│   └── phase1_examples.py
-└── README.md                    # This file
-```
+
+**Get your Gemini API key:**
+1. Visit https://aistudio.google.com/apikey
+2. Click "Create API Key"
+3. Copy and paste in `.env`
+
+### Initial Settings
+
+Default configuration:
+- **Initial Capital**: ₹100,000
+- **Brokerage**: 0.03% per trade
+- **Market Hours**: Mon-Fri, 9:15 AM - 3:30 PM IST
+- **Watchlist**: Top NSE stocks (RELIANCE, TCS, INFY, etc.)
 
 ---
 
-## 🔧 Advanced Usage
+## 🎓 Learning Resources
 
-### Integrated Trading Workflow
-
-See `examples/phase1_examples.py` for a complete workflow that:
-1. Synchronizes price, news, and technical signals
-2. Makes trading decisions based on aligned signals
-3. Calculates conservative position sizes
-4. Validates trades against risk limits
-5. Simulates realistic order execution
-6. Tracks total costs and slippage
-
-### Custom Cost Assumptions
-
-```python
-# Override default assumptions for specific strategies
-custom_model = ConservativeRiskModel(
-    account_balance=10000.0,
-    custom_assumptions={
-        "assumed_slippage": 0.005,      # Higher slippage for illiquid stocks
-        "assumed_spread": 0.002,        # Wider spreads
-        "market_impact": 0.003,         # Higher impact
-        "hurdle_rate": 0.01             # Higher hurdle (1%)
-    }
-)
-```
-
-### Dynamic Market Conditions
-
-```python
-# Adjust simulator based on time of day
-from datetime import datetime
-
-now = datetime.now()
-hour = now.hour
-
-if 9 <= hour < 10:  # Market open
-    simulator.set_condition(MarketCondition.OPENING)
-elif 15 <= hour < 16:  # Market close
-    simulator.set_condition(MarketCondition.CLOSING)
-else:
-    simulator.set_condition(MarketCondition.NORMAL)
-```
+- 📄 [Complete Documentation](PROJECT_DOCUMENTATION.md) - 60+ page comprehensive guide
+- 🎬 Demo walkthrough (coming soon)
+- 📝 Trading tutorials (coming soon)
 
 ---
 
-## 📈 Performance Metrics
+## 🚧 Roadmap
 
-Track system performance with built-in metrics:
-
-```python
-# Signal synchronizer metrics
-metrics = sync.get_metrics()
-print(f"Drop rate: {metrics['drop_rate']:.2%}")
-print(f"Windows completed: {metrics['windows_completed']}")
-
-# Slippage simulator statistics
-stats = simulator.get_statistics()
-print(f"Avg slippage: {stats['avg_slippage_pct']:.3f}%")
-print(f"Total cost: ${stats['total_slippage_cost']:.2f}")
-
-# Risk model summary
-summary = risk_model.get_risk_summary()
-print(f"Max position: ${summary['max_position_value']:.2f}")
-print(f"Total cost per roundtrip: {summary['total_cost_per_roundtrip_pct']:.3f}%")
-```
-
----
-
-## 🛣️ Roadmap
-
-### Phase 1 ✅ (Current)
-- [x] Signal synchronization
-- [x] Slippage simulation
-- [x] Conservative risk model
-- [x] Unit tests
-- [x] Usage examples
-
-### Phase 2 (Next)
-- [ ] Tiered caching for GraphRAG (overnight batch + real-time lite)
-- [ ] Circuit breaker with persistence
-- [ ] Multi-agent orchestration with LangGraph
-- [ ] Integration with Alpaca Paper Trading API
-
-### Phase 3 (Future)
-- [ ] Deep perception agent (supply chain analysis)
-- [ ] Analyst agent (multi-factor analysis)
-- [ ] Executioner agent (risk-managed execution)
-- [ ] Full system integration and testing
-
----
-
-## 📝 License
-
-MIT License - See LICENSE file for details
+- [ ] Historical backtesting
+- [ ] Advanced charting (more indicators)
+- [ ] Price alerts & notifications  
+- [ ] Multiple portfolio strategies
+- [ ] Export reports (PDF/CSV)
+- [ ] Options trading (F&O)
+- [ ] Mobile app (React Native)
 
 ---
 
 ## 🤝 Contributing
 
-This is a research/educational project. Contributions welcome via pull requests.
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **Google Gemini** - AI-powered trading analysis
+- **yfinance** - Real-time stock data
+- **Streamlit** - Beautiful web framework
+- **Groww** - UI/UX inspiration
+- **NSE/BSE** - Indian stock market data
+
+---
+
+## 📞 Contact & Support
+
+**Created by:** Karthi ([@karthixcarlo](https://github.com/karthixcarlo))
+
+**Issues & Questions:**
+- Open an [issue](https://github.com/karthixcarlo/sentinel-trading-bot/issues)
+- Discussions tab for Q&A
 
 ---
 
 ## ⚠️ Disclaimer
 
-**This software is for educational and research purposes only.** It is not financial advice. Trading involves substantial risk of loss. Always test thoroughly with paper trading before considering live deployment.
+This is a **paper trading platform** for **educational purposes only**. No real money is involved. This is NOT financial advice. Always do your own research before investing real money. Past performance does not guarantee future results.
 
 ---
 
-## 📧 Contact
+## 📊 Stats
 
-For questions or feedback, please open an issue on the repository.
+![GitHub stars](https://img.shields.io/github/stars/karthixcarlo/sentinel-trading-bot?style=social)
+![GitHub forks](https://img.shields.io/github/forks/karthixcarlo/sentinel-trading-bot?style=social)
+![GitHub issues](https://img.shields.io/github/issues/karthixcarlo/sentinel-trading-bot)
 
 ---
 
-**Built with a focus on realistic risk management and robust execution modeling.**
+<div align="center">
+
+**Made with ❤️ for aspiring traders**
+
+**⭐ Star this repo if you find it helpful!**
+
+[Report Bug](https://github.com/karthixcarlo/sentinel-trading-bot/issues) · [Request Feature](https://github.com/karthixcarlo/sentinel-trading-bot/issues) · [Documentation](PROJECT_DOCUMENTATION.md)
+
+</div>
