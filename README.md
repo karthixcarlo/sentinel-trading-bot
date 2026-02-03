@@ -17,13 +17,23 @@ Sentinel is a **production-grade paper trading platform** that combines **Google
 
 ### ✨ Key Features
 
-- 🤖 **AI-Powered Signals** - Gemini analyzes stocks and gives BUY/WAIT/AVOID recommendations
-- 📊 **Real-Time Data** - Live prices, charts, and news from NSE/BSE
-- 💼 **Portfolio Tracking** - Monitor your virtual holdings and P&L
-- 📈 **Technical Analysis** - RSI, MACD, Bollinger Bands, Volume analysis
-- 📰 **News Integration** - Stay updated with latest market news
-- 🎨 **Premium UI** - Clean, Groww-inspired design
-- ⏰ **Market Hours** - Realistic trading hours (9:15 AM - 3:30 PM IST)
+**Autonomous Trading:**
+- 🤖 **5 AI Agents** - Scout, Analyst, Risk Manager, Trader, Supervisor
+- 🔄 **24/7 Operation** - Autonomous runner with market hours awareness
+- 🧠 **God Mode UI** - Live agent monitoring dashboard
+- 🗄️ **Database Logging** - SQLite persistence for all agent thoughts
+
+**AI Analysis:**
+- 🧠 **Google Gemini 2.5 Flash** - Advanced AI-powered stock analysis
+- 📊 **Technical Indicators** - RSI, MACD, Bollinger Bands, Volume
+- 📰 **News Integration** - Real-time market sentiment analysis
+- ⚡ **LangGraph Orchestration** - Multi-agent workflow system
+
+**Trading Platform:**
+- 💼 **Portfolio Tracking** - Monitor virtual holdings and P&L
+- 📈 **Real-Time Data** - Live prices from NSE/BSE (yfinance)
+- 🎨 **Premium UI** - Glassmorphic design with dark theme
+- ⏰ **Market Hours** - Realistic 9:15 AM - 3:30 PM IST trading
 
 ---
 
