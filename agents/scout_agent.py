@@ -21,6 +21,7 @@ from typing import List
 from langchain_core.messages import HumanMessage
 
 from sentinel_state import SentinelState
+from database_manager import log_agent_thought
 
 
 # NSE Top stocks universe
@@ -160,11 +161,14 @@ def scout_node(state: SentinelState) -> SentinelState:
         
         # 5. Log message
         direction = "🟢 UP" if change_pct > 0 else "🔴 DOWN"
-        state['messages'].append(
-            HumanMessage(
-                content=f"🕵️ Scout: Found opportunity → {selected_symbol.replace('.NS', '')} {direction} {abs(change_pct):.2f}% | Price: ₹{best['price']:,.2f}"
-            )
-        )
+        message = f"🕵️ Scout: Found opportunity → {selected_symbol.replace('.NS', '')} {direction} {abs(change_pct):.2f}% | Price: ₹{best['price']:,.2f}"
+        state['messages'].append(HumanMessage(content=message))
+        
+        # Log to database
+        try:
+            log_agent_thought("Scout", message.replace('🕵️ Scout: ', ''), state, state.get('iteration_count', 0))
+        except:
+            pass
         
         print(f"✅ Scout: Selected {selected_symbol} ({change_pct:+.2f}%)")
         
