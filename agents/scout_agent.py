@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Scout Agent - Finds trading opportunities by scanning the market
+Scout Agent - Market Scanner with Rolling Batch Strategy
 
-Responsibility: Market scanning and opportunity discovery
-Logic:
-    1. Fetch top gainers/losers/active stocks from NSE
-    2. Filter out stocks already traded today
-    3. Select the highest confidence opportunity
-    4. Update state.current_ticker
+Responsibility: Find trading opportunities from the full NSE universe
+Strategy:
+    - Uses Rolling Batch Funnel (50 stocks per cycle)
+    - Parallel download using yfinance threads
+    - Smart filtering (volume, price, liquidity)
+    - Momentum-based selection
 """
 
 import sys
@@ -15,169 +15,269 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import yfinance as yf
-from datetime import datetime, timedelta
 import pandas as pd
-from typing import List
+from datetime import datetime, timedelta
+from typing import Dict, List, Tuple, Optional
 from langchain_core.messages import HumanMessage
 
 from sentinel_state import SentinelState
 from database_manager import log_agent_thought
+from market_loader import get_market_loader
 
 
-# NSE Top stocks universe
-NSE_STOCKS = [
-    "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS",
-    "HINDUNILVR.NS", "SBIN.NS", "BHARTIARTL.NS", "ITC.NS", "KOTAKBANK.NS",
-    "LT.NS", "AXISBANK.NS", "ASIANPAINT.NS", "MARUTI.NS", "TITAN.NS",
-    "SUNPHARMA.NS", "ULTRACEMCO.NS", "BAJFINANCE.NS", "NESTLEIND.NS", "WIPRO.NS",
-    "HCLTECH.NS", "TATASTEEL.NS", "TATAMOTORS.NS", "ADANIPORTS.NS", "ONGC.NS"
-]
+# Smart filtering thresholds
+MIN_VOLUME = 100_000  # Minimum daily volume (liquidity filter)
+MIN_PRICE = 20.0      # Minimum stock price (avoid penny stocks)
+BATCH_SIZE = 50       # Number of stocks to analyze per cycle
 
 
-def discover_opportunities() -> pd.DataFrame:
+def download_batch_data(tickers: List[str]) -> Dict[str, pd.DataFrame]:
     """
-    Scan market for trading opportunities
+    Download market data for multiple stocks in parallel
     
-    Returns:
-        DataFrame with columns: symbol, price, change_percent, volume
-    """
-    opportunities = []
-    
-    for symbol in NSE_STOCKS:
-        try:
-            ticker = yf.Ticker(symbol)
-            hist = ticker.history(period="2d")
-            
-            if len(hist) < 2:
-                continue
-            
-            current_price = hist['Close'].iloc[-1]
-            prev_price = hist['Close'].iloc[-2]
-            change_percent = ((current_price - prev_price) / prev_price) * 100
-            volume = hist['Volume'].iloc[-1]
-            
-            opportunities.append({
-                'symbol': symbol,
-                'price': current_price,
-                'change_percent': change_percent,
-                'volume': volume,
-                'abs_change': abs(change_percent)
-            })
-            
-        except Exception as e:
-            # Skip if data fetch fails
-            continue
-    
-    df = pd.DataFrame(opportunities)
-    
-    if df.empty:
-        return df
-    
-    # Sort by absolute change (biggest movers)
-    df = df.sort_values('abs_change', ascending=False)
-    
-    return df
-
-
-def get_todays_trades(portfolio: dict) -> List[str]:
-    """
-    Get list of stocks traded today
+    Uses yfinance's threading for fast bulk download
     
     Args:
-        portfolio: Current portfolio state
+        tickers: List of stock symbols
         
     Returns:
-        List of symbols traded today
+        Dict mapping ticker to DataFrame
     """
-    today = datetime.now().date()
-    traded_today = []
+    try:
+        # Bulk download with threading
+        print(f"📊 Downloading data for {len(tickers)} stocks (parallel)...")
+        
+        data = yf.download(
+            tickers,
+            period="1d",
+            interval="1d",
+            group_by='ticker',
+            threads=True,
+            progress=False,
+            show_errors=False
+        )
+        
+        # Parse results into dict
+        result = {}
+        
+        if len(tickers) == 1:
+            # Single ticker returns different structure
+            ticker = tickers[0]
+            if not data.empty:
+                result[ticker] = data
+        else:
+            # Multiple tickers
+            for ticker in tickers:
+                try:
+                    ticker_data = data[ticker]
+                    if not ticker_data.empty and len(ticker_data) > 0:
+                       result[ticker] = ticker_data
+                except (KeyError, AttributeError):
+                    continue
+        
+        print(f"✅ Downloaded {len(result)} valid datasets")
+        return result
+        
+    except Exception as e:
+        print(f"❌ Batch download error: {e}")
+        return {}
+
+
+def filter_junk_stocks(data_dict: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+    """
+    Filter out illiquid and penny stocks
     
-    for order in portfolio.get('orders', []):
-        # Check if order timestamp is today
-        # (In production, parse actual timestamp)
-        traded_today.append(order.get('symbol', ''))
+    Criteria:
+    - Volume >= 100,000 (liquidity)
+    - Close Price >= ₹20 (avoid penny stocks)
     
-    return traded_today
+    Args:
+        data_dict: Dict of ticker -> DataFrame
+        
+    Returns:
+        Filtered dict with only quality stocks
+    """
+    filtered = {}
+    junk_count = 0
+    
+    for ticker, df in data_dict.items():
+        try:
+            if df.empty or len(df) == 0:
+                junk_count += 1
+                continue
+            
+            # Get latest data
+            latest = df.iloc[-1]
+            
+            # Check volume
+            volume = latest.get('Volume', 0)
+            if volume < MIN_VOLUME:
+                junk_count += 1
+                continue
+            
+            # Check price
+            close_price = latest.get('Close', 0)
+            if close_price < MIN_PRICE:
+                junk_count += 1
+                continue
+            
+            # Passed filters
+            filtered[ticker] = df
+            
+        except Exception as e:
+            junk_count += 1
+            continue
+    
+    print(f"🗑️  Filtered out {junk_count} junk stocks (low volume/price)")
+    print(f"✅ {len(filtered)} quality stocks remain")
+    
+    return filtered
+
+
+def calculate_momentum(data_dict: Dict[str, pd.DataFrame]) -> List[Tuple[str, float, float]]:
+    """
+    Calculate momentum (% change) for each stock
+    
+    Args:
+        data_dict: Dict of ticker -> DataFrame
+        
+    Returns:
+        List of (ticker, momentum_pct, price) sorted by momentum
+    """
+    momentum_list = []
+    
+    for ticker, df in data_dict.items():
+        try:
+            if df.empty or len(df) == 0:
+                continue
+            
+            latest = df.iloc[-1]
+            
+            open_price = latest.get('Open', 0)
+            close_price = latest.get('Close', 0)
+            
+            if open_price == 0:
+                continue
+            
+            # Calculate percentage change
+            momentum = ((close_price - open_price) / open_price) * 100
+            
+            momentum_list.append((ticker, momentum, close_price))
+            
+        except Exception:
+            continue
+    
+    # Sort by momentum (descending)
+    momentum_list.sort(key=lambda x: x[1], reverse=True)
+    
+    return momentum_list
 
 
 def scout_node(state: SentinelState) -> SentinelState:
     """
-    Scout Agent - Find the next trading opportunity
+    Scout Agent - Find best trading opportunity using Rolling Batch Strategy
     
     Process:
-    1. Scan market for top movers
-    2. Filter already traded stocks
-    3. Select best opportunity
-    4. Update state
+    1. Get random batch of 50 stocks from full NSE universe
+    2. Parallel download market data
+    3. Filter junk stocks (volume, price)
+    4. Calculate momentum for remaining stocks
+    5. Select stock with highest positive momentum
+    6. Update state
     
     Args:
         state: Current SentinelState
         
     Returns:
-        Updated SentinelState with current_ticker set
+        Updated SentinelState with selected ticker
     """
     
-    print("🕵️  Scout Agent: Scanning market for opportunities...")
+    print(f"\n🕵️  Scout Agent: Scanning market using Rolling Batch strategy...\n")
     
     try:
-        # 1. Discover opportunities
-        opportunities = discover_opportunities()
+        # Get market loader
+        loader = get_market_loader()
         
-        if opportunities.empty:
-            state['current_ticker'] = ""
-            state['errors'].append("Scout: No opportunities found")
+        # Get random batch
+        batch = loader.get_smart_batch(size=BATCH_SIZE)
+        print(f"🔭 Scouting batch: {batch[:5]}... (+{len(batch)-5} more)")
+        
+        # Filter already traded stocks
+        traded_tickers = state.get('traded_tickers', [])
+        batch = [t for t in batch if t not in traded_tickers]
+        
+        if len(batch) == 0:
             state['messages'].append(
-                HumanMessage(content="🕵️ Scout: No tradable opportunities found in market scan")
+                HumanMessage(content="🕵️ Scout: All stocks in batch already traded. Skipping cycle.")
             )
             return state
         
-        # 2. Filter already traded (use portfolio from state)
-        portfolio = state.get('portfolio_snapshot', {'orders': []})
-        traded_today = get_todays_trades(portfolio)
+        # Download batch data in parallel
+        data_dict = download_batch_data(batch)
         
-        # Filter out traded stocks
-        available = opportunities[~opportunities['symbol'].isin(traded_today)]
-        
-        if available.empty:
-            # All stocks already traded today
-            state['current_ticker'] = ""
+        if not data_dict:
+            state['errors'].append("Scout: No valid data in batch")
             state['messages'].append(
-                HumanMessage(content="🕵️ Scout: All top opportunities already traded today. Waiting for new signals.")
+                HumanMessage(content="🕵️ Scout: ❌ No valid data in this batch")
             )
             return state
         
-        # 3. Select best opportunity (top mover)
-        best = available.iloc[0]
-        selected_symbol = best['symbol']
-        change_pct = best['change_percent']
+        #Filter junk stocks
+        quality_stocks = filter_junk_stocks(data_dict)
         
-        # 4. Update state
-        state['current_ticker'] = selected_symbol
+        if not quality_stocks:
+            state['messages'].append(
+                HumanMessage(content=f"🕵️ Scout: All {len(data_dict)} stocks filtered as junk")
+            )
+            return state
+        
+        # Calculate momentum
+        momentum_list = calculate_momentum(quality_stocks)
+        
+        if not momentum_list:
+            state['messages'].append(
+                HumanMessage(content="🕵️ Scout: No stocks with calculable momentum")
+            )
+            return state
+        
+        # Select best stock (highest momentum)
+        best_ticker, best_momentum, best_price = momentum_list[0]
+        
+        # Update state
+        state['current_ticker'] = best_ticker
+        
+        # Create market data dict for analyst
         state['market_data'] = {
-            'price': float(best['price']),
-            'change_percent': float(change_pct),
-            'volume': int(best['volume'])
+            'price': best_price,
+            'momentum': best_momentum,
+            'data': quality_stocks[best_ticker]
         }
         
-        # 5. Log message
-        direction = "🟢 UP" if change_pct > 0 else "🔴 DOWN"
-        message = f"🕵️ Scout: Found opportunity → {selected_symbol.replace('.NS', '')} {direction} {abs(change_pct):.2f}% | Price: ₹{best['price']:,.2f}"
+        # Log message
+        direction = "🟢 UP" if best_momentum > 0 else "🔴 DOWN"
+        message = f"🕵️ Scout: Found opportunity → {best_ticker.replace('.NS', '')} {direction} {abs(best_momentum):.2f}% | Price: ₹{best_price:,.2f}"
         state['messages'].append(HumanMessage(content=message))
         
         # Log to database
         try:
-            log_agent_thought("Scout", message.replace('🕵️ Scout: ', ''), state, state.get('iteration_count', 0))
+            log_agent_thought(
+                "Scout",
+                f"Scanned {len(batch)} stocks, filtered {len(batch) - len(quality_stocks)} junk. Best: {best_ticker.replace('.NS', '')} ({best_momentum:+.2f}%)",
+                state,
+                state.get('iteration_count', 0),
+                state.get('workflow_id')
+            )
         except:
             pass
         
-        print(f"✅ Scout: Selected {selected_symbol} ({change_pct:+.2f}%)")
+        print(f"\n✅ Scout: Selected {best_ticker} ({best_momentum:+.2f}%)")
+        print(f"📊 Scan Stats: {len(batch)} downloaded → {len(quality_stocks)} quality → {len(momentum_list)} analyzed\n")
         
     except Exception as e:
         # Error handling
         state['errors'].append(f"Scout error: {str(e)}")
-        state['current_ticker'] = ""
         state['messages'].append(
-            HumanMessage(content=f"🕵️ Scout: Error during market scan - {str(e)}")
+            HumanMessage(content=f"🕵️ Scout: ❌ Error - {str(e)}")
         )
         print(f"❌ Scout error: {e}")
     
@@ -186,27 +286,22 @@ def scout_node(state: SentinelState) -> SentinelState:
 
 # Test function
 if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, 'C:\\Users\\Karthi\\Desktop\\Agent')
     from sentinel_state import create_initial_state
     
-    print("Testing Scout Agent...")
+    print("Testing upgraded Scout Agent...")
+    
     state = create_initial_state()
+    state['traded_tickers'] = []  # Empty for test
     
-    # Add mock portfolio
-    state['portfolio_snapshot'] = {
-        'cash': 100000,
-        'positions': [],
-        'orders': []
-    }
-    
-    # Run scout
     result = scout_node(state)
     
-    print(f"\n📊 Result:")
-    print(f"   Ticker: {result['current_ticker']}")
-    print(f"   Market Data: {result['market_data']}")
-    print(f"   Messages: {len(result['messages'])}")
+    print("\n" + "="*60)
+    print("RESULTS:")
+    print(f"Selected Ticker: {result.get('current_ticker')}")
+    print(f"Errors: {result.get('errors')}")
+    print("\nMessages:")
+    for msg in result.get('messages', []):
+        print(f"  - {msg.content}")
+    print("="*60)
     
-    for msg in result['messages']:
-        print(f"   - {msg.content}")
+    print("\n✅ Test complete!")
