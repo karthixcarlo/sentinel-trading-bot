@@ -1,0 +1,35 @@
+# Python dependencies for Project Sentinel
+
+# Core dependencies
+python-dateutil>=2.8.0
+python-dotenv>=1.0.0
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=3.0.0
+
+# Phase 2: Async infrastructure
+aiohttp>=3.9.0
+aiosqlite>=0.19.0
+jsonschema>=4.20.0
+
+# Phase 4: Real data integration
+yfinance>=0.2.40
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Phase 5: Trading execution
+# US Markets (Alpaca)
+alpaca-trade-api>=3.0.0
+
+# Indian Markets (Zerodha Kite Connect)
+kiteconnect>=4.2.0
+pytz>=2023.3
+
+# Future dependencies (for later phases)
+# newsapi-python>=0.2.7
+
+# Phase 6: Interactive Dashboard
+streamlit>=1.30.0
+plotly>=5.18.0
+streamlit-option-menu>=0.3.6
