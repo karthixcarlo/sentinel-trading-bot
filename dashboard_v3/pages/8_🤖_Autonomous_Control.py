@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import streamlit as st
 import pandas as pd
 import subprocess
-import psutil
+import os
 from datetime import datetime
 import time
 
@@ -129,14 +129,28 @@ def is_autonomous_running() -> bool:
     Returns:
         bool: True if running
     """
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-        try:
-            cmdline = proc.info.get('cmdline', [])
-            if cmdline and 'run_autonomous.py' in ' '.join(cmdline):
-                return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
-            continue
-    return False
+    try:
+        # Windows-specific: Check using tasklist
+        if os.name == 'nt':
+            result = subprocess.run(
+                ['tasklist', '/FI', 'IMAGENAME eq python.exe', '/FO', 'CSV'],
+                capture_output=True,
+                text=True
+            )
+            
+            # Check if run_autonomous.py is in the output
+            return 'run_autonomous' in result.stdout.lower()
+        else:
+            # Unix-based: use ps
+            result = subprocess.run(
+                ['ps', 'aux'],
+                capture_output=True,
+                text=True
+            )
+            return 'run_autonomous.py' in result.stdout
+            
+    except Exception:
+        return False
 
 
 def start_autonomous():
@@ -165,17 +179,18 @@ def stop_autonomous():
     Stop the autonomous trading system
     """
     try:
-        killed = 0
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-            try:
-                cmdline = proc.info.get('cmdline', [])
-                if cmdline and 'run_autonomous.py' in ' '.join(cmdline):
-                    proc.terminate()
-                    killed += 1
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
-        
-        return killed > 0
+        if os.name == 'nt':
+            # Windows: Kill python processes running run_autonomous.py
+            subprocess.run(
+                ['taskkill', '/F', '/FI', 'WINDOWTITLE eq *run_autonomous*'],
+                capture_output=True
+            )
+            return True
+        else:
+            # Unix: pkill
+            subprocess.run(['pkill', '-f', 'run_autonomous.py'])
+            return True
+            
     except Exception as e:
         st.error(f"Failed to stop: {e}")
         return False
