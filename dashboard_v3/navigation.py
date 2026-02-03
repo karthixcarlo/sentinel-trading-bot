@@ -47,3 +47,6 @@ def render_top_nav(current_page="Home"):
             st.switch_page("pages/6_⚙️_Settings.py")
     
     st.markdown("---")
+
+# Alias for compatibility
+render_top_navigation = render_top_nav
