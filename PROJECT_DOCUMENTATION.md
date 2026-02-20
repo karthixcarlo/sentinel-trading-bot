@@ -920,7 +920,6 @@ Perfect for **learning**, **practicing**, and **mastering** stock trading withou
 
 **Created by:** Karthi  
 **Project Location:** `C:\Users\Karthi\Desktop\Agent`  
-**Dashboard URL:** http://localhost:8509  
 **Documentation:** This file  
 
 ---
