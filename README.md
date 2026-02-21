@@ -16,6 +16,14 @@ Sentinel is a **production-grade autonomous paper trading platform** built on a 
 
 ---
 
+## Beta Wokring Portfolio
+
+Link : https://sentinel-dashboard-production.up.railway.app
+
+Note: This is sample of this project,still the web app part is under development.The engine ( Lang graph Agent is Production ready and scalable)
+
+---
+
 ## Architecture
 
 ```
