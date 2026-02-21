@@ -111,9 +111,13 @@ st.title("Stock Analyzer")
 st.subheader("Select Stock to Analyze")
 
 # Get default from session state (if user clicked Analyze in Discovery)
-default_stock = st.session_state.get('selected_stock', "RELIANCE.NS")
-if default_stock.endswith(".NS"):
-    default_stock = default_stock[:-3]
+default_stock = st.session_state.get('selected_stock')
+if default_stock and isinstance(default_stock, str):
+    if default_stock.endswith(".NS"):
+        default_stock = default_stock[:-3]
+else:
+    default_stock = "RELIANCE.NS"
+
 
 # Search box
 user_input = st.text_input("Enter NSE Stock Symbol (e.g., RELIANCE, TCS, INFY)", value=default_stock).strip().upper()

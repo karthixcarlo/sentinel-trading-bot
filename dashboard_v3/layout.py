@@ -17,28 +17,15 @@ PREMIUM_THEME = """
 
 <style>
     /* ============================================ */
-    /* GROWW-INSPIRED LIGHT THEME */
+    /* GROWW DESIGN SYSTEM (High Contrast) */
     /* ============================================ */
     
     :root {
-        /* Light backgrounds */
-        --bg-primary: #ffffff;
-        --bg-secondary: #f8f9fa;
-        --bg-tertiary: #f3f4f6;
-        
-        /* Card styling */
-        --card-bg: #ffffff;
-        --card-border: #e5e7eb;
-        --card-shadow: rgba(0, 0, 0, 0.05);
-        
-        /* Text colors */
-        --text-primary: #1f2937;
-        --text-secondary: #6b7280;
-        --text-muted: #9ca3af;
-        
-        /* Groww green accent */
+        --bg-color: #FFFFFF;
+        --card-bg: #FFFFFF;
+        --text-primary: #111111;
+        --text-secondary: #444444;
         --accent-green: #00D09C;
-        --accent-green-light: #e6f9f5;
         --accent-green-dark: #00b386;
         
         /* Status colors */
