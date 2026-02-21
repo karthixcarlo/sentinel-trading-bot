@@ -3,6 +3,10 @@
 # Only track: agents/, dashboard_v3/, core *.py, config files
 # ============================================================
 
+# --- Local dev tools (never push) ---
+dev_sync_watcher.py
+
+
 # --- Python cache ---
 __pycache__/
 *.py[cod]
