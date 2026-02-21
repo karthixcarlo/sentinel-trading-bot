@@ -18,6 +18,9 @@ numpy==1.26.4
 beautifulsoup4==4.12.3
 requests==2.32.3
 
+# --- Database (Supabase) ---
+supabase==2.9.1
+
 # --- Utilities ---
 python-dotenv==1.0.1
 pydantic==2.10.4
