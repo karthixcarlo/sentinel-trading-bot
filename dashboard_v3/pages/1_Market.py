@@ -12,7 +12,11 @@ import sys
 import os
 
 # Add parent directory to path so we can import layout
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PAGES_DIR = os.path.dirname(os.path.abspath(__file__))
+DASH_DIR  = os.path.dirname(PAGES_DIR)
+ROOT_DIR  = os.path.dirname(DASH_DIR)
+sys.path.insert(0, ROOT_DIR)
+sys.path.insert(0, DASH_DIR)
 
 from layout import setup_page_config, render_navigation, apply_groww_theme
 
