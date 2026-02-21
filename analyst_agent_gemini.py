@@ -8,7 +8,7 @@ import logging
 import json
 from typing import Optional, Literal
 from pydantic import BaseModel, Field
-from google import genai
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -37,8 +37,8 @@ class TradeSignal(BaseModel):
         le=1.0
     )
     reasoning: str = Field(
-        description="Concise explanation of the decision (max 200 chars)",
-        max_length=200
+        description="Concise explanation of the decision (max 1000 chars)",
+        max_length=1000
     )
     stop_loss: Optional[float] = Field(
         default=None,
@@ -71,62 +71,63 @@ class AgenticAnalyst:
     Replaces rigid if/else logic with LLM reasoning
     """
     
-    def __init__(self, model_name: str = "gemini-2.5-flash"):
+    def __init__(self, model_name: str = "gemini-2.0-flash"):
         """
         Initialize the Gemini-powered analyst
         
         Args:
-            model_name: Gemini model to use (default: gemini-2.5-flash for stability)
+            model_name: Gemini model to use (default: gemini-2.0-flash for stability)
         """
-        # Validate API key
-        api_key = os.getenv("GOOGLE_API_KEY")
+        # Validate API key - Support both naming conventions
+        api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+        
         if not api_key:
-            logger.warning("GOOGLE_API_KEY not found in environment. Fallback mode will be used.")
+            logger.warning("GOOGLE_API_KEY or GEMINI_API_KEY not found in environment. Fallback mode will be used.")
             self.client = None
             self.model = None
         else:
             try:
                 # Initialize Google GenAI client
-                self.client = genai.Client(api_key=api_key)
-                self.model = model_name
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel(model_name)
                 logger.info(f"AgenticAnalyst initialized with {model_name}")
             except Exception as e:
                 logger.error(f"Failed to initialize Gemini: {e}")
-                self.client = None
                 self.model = None
         
-        # Define the system prompt
-        self.system_prompt = """You are a BALANCED Quantitative Trading Analyst with experience in Indian markets (NSE/BSE).
-Your job is to analyze technical indicators and news to make ACTIONABLE trading decisions.
+        # Define the system prompt - TUNED FOR DECISIVENESS
+        self.system_prompt = """You are a DECISIVE Quantitative Trading Analyst for Indian markets (NSE/BSE).
+Your job is to analyze data and make CLEAR, ACTIONABLE recommendations (BUY or AVOID).
 
-SIGNAL FRAMEWORK (Use all 3 signals equally):
-- **BUY** (Green): Strong bullish signals, positive momentum, good risk/reward
-- **WAIT** (Neutral): Mixed signals, unclear direction, need more data
-- **AVOID** (Red): Strong bearish signals, negative momentum, high risk
+GOAL: Minimize "WAIT" signals. Traders need direction. Even a weak trend is better than no action.
+
+SIGNAL FRAMEWORK:
+- **BUY** (Green): Bullish momentum, Oversold conditions, Uptrends, or Good News.
+- **AVOID** (Red): Bearish momentum, Overbought conditions, Downtrends, or Bad News.
+- **WAIT** (Neutral): ONLY use if indicators are completely contradictory (e.g., RSI says Buy but Macd says Sell with equal strength).
 
 CRITICAL RULES:
-1. BE DECISIVE - Don't default to WAIT unless truly unclear
-2. ANALYZE HOLISTICALLY - Consider ALL indicators together
-3. CONFIDENCE THRESHOLD: 
-   - BUY if confidence ≥ 60% (not too high!)
-   - AVOID if negative confidence ≥ 60%
-   - WAIT only if truly mixed (40-60% range)
-4. NEWS WEIGHT: Recent news can override technicals
-5. TREND MATTERS: Respect the dominant trend
+1. **BE OPINIONATED**: If the general trend is up (Price > SMA200), bias towards BUY. If down, bias towards AVOID.
+2. **LOWER WAIT THRESHOLD**: 
+   - BUY if confidence ≥ 55%
+   - AVOID if negative confidence ≥ 55% 
+   - WAIT only if truly stuck between 45-55%
+3. **RSI LOGIC**:
+   - RSI < 45 in uptrend = BUY (Pullback opportunity)
+   - RSI > 60 in downtrend = AVOID (Relief rally)
+4. **NEWS MATTERS**: Positive news can justify a BUY even if technicals are flat.
 
 INDICATORS INTERPRETATION:
-- RSI < 30 = Oversold (BULLISH signal)
-- RSI > 70 = Overbought (BEARISH signal)
-- MACD > Signal = Bullish momentum → favor BUY
-- MACD < Signal = Bearish momentum → favor AVOID
-- Volume spike + price up = Strong buying → BUY
-- Volume spike + price down = Strong selling → AVOID
-- Trend: Bullish → bias BUY | Bearish → bias AVOID | Neutral → WAIT
+- RSI < 35 = Oversold (Strong BUY)
+- RSI > 70 = Overbought (Strong AVOID)
+- MACD > Signal = Bullish (Bias BUY)
+- MACD < Signal = Bearish (Bias AVOID)
+- Trend: Bullish = Bias BUY | Bearish = Bias AVOID
 
 DECISION LOGIC:
-- If 2+ bullish signals → BUY
-- If 2+ bearish signals → AVOID  
-- If mixed/contradictory → WAIT
+- 1 Strong Bullish OR 2 Weak Bullish signals = BUY
+- 1 Strong Bearish OR 2 Weak Bearish signals = AVOID
+- Purely flat/conflicting = WAIT
 
 You MUST respond with valid JSON in this EXACT format:
 {
@@ -164,9 +165,9 @@ You MUST respond with valid JSON in this EXACT format:
         # CIRCUIT BREAKER: Try Gemini, fallback to rule-based
         # ====================================================================
         
-        if self.client is None:
+        if self.model is None:
             logger.warning("Gemini not available. Using fallback logic.")
-            return self._fallback_analysis(ticker, current_price, technical_data)
+            return self._fallback_analysis(ticker, current_price, technical_data, error_msg="Model not initialized (Check API Key)")
         
         try:
             # Create the full prompt
@@ -187,10 +188,7 @@ Provide your expert analysis and trading recommendation in JSON format."""
             
             # Call Gemini
             logger.info(f"Analyzing {ticker} with Gemini...")
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt
-            )
+            response = self.model.generate_content(prompt)
             
             # Parse JSON response
             response_text = response.text.strip()
@@ -216,13 +214,14 @@ Provide your expert analysis and trading recommendation in JSON format."""
         except Exception as e:
             # Log error but don't crash
             logger.error(f"Gemini API failed: {e}. Falling back to rule-based analysis.")
-            return self._fallback_analysis(ticker, current_price, technical_data)
+            return self._fallback_analysis(ticker, current_price, technical_data, error_msg=str(e))
     
     def _fallback_analysis(
         self,
         ticker: str,
         current_price: float,
-        technical_data: dict
+        technical_data: dict,
+        error_msg: str = None
     ) -> TradeSignal:
         """
         Simple rule-based fallback when Gemini is unavailable
@@ -231,6 +230,7 @@ Provide your expert analysis and trading recommendation in JSON format."""
             ticker: Stock symbol
             current_price: Current price
             technical_data: Technical indicators
+            error_msg: Optional error message to display
             
         Returns:
             TradeSignal based on simple rules
@@ -238,44 +238,54 @@ Provide your expert analysis and trading recommendation in JSON format."""
         rsi = technical_data.get('rsi', 50)
         macd_signal = technical_data.get('macd_signal', 'neutral')
         
-        # Simple oversold/overbought logic
-        if rsi < 30 and macd_signal.lower() == 'bullish':
+        # Truncate error message if it's too long to prevent Pydantic validation errors
+        safe_error_msg = str(error_msg)[:100] + "..." if error_msg and len(str(error_msg)) > 100 else error_msg
+        
+        prefix = f"Fallback (Error: {safe_error_msg}): " if safe_error_msg else "Fallback: "
+        
+        # Tuned Fallback Logic - More Decisive
+        
+        # Strong Buy
+        if rsi < 35 or (rsi < 45 and macd_signal.lower() == 'bullish'):
             return TradeSignal(
                 signal="BUY",
-                confidence=0.6,
-                reasoning="Fallback: Oversold RSI + bullish MACD",
+                confidence=0.75,
+                reasoning=f"{prefix}Strong oversold or bullish recovery setup",
                 stop_loss=current_price * 0.95,
                 take_profit=current_price * 1.10
             )
-        elif rsi > 70 and macd_signal.lower() == 'bearish':
+        # Strong Sell
+        elif rsi > 70 or (rsi > 60 and macd_signal.lower() == 'bearish'):
             return TradeSignal(
-                signal="SELL",
-                confidence=0.6,
-                reasoning="Fallback: Overbought RSI + bearish MACD",
+                signal="AVOID",
+                confidence=0.75,
+                reasoning=f"{prefix}Overbought or bearish reversal setup",
                 stop_loss=None,
                 take_profit=None
             )
-        elif rsi < 30:
+        # Weak Buy (Trend following)
+        elif 45 <= rsi <= 60 and macd_signal.lower() == 'bullish':
             return TradeSignal(
                 signal="BUY",
-                confidence=0.5,
-                reasoning="Fallback: Oversold RSI",
-                stop_loss=current_price * 0.95,
-                take_profit=current_price * 1.08
+                confidence=0.6,
+                reasoning=f"{prefix}Momentum buy (RSI neutral, MACD bullish)",
+                stop_loss=current_price * 0.97,
+                take_profit=current_price * 1.05
             )
-        elif rsi > 70:
+        # Weak Sell
+        elif 40 <= rsi <= 55 and macd_signal.lower() == 'bearish':
             return TradeSignal(
-                signal="SELL",
-                confidence=0.5,
-                reasoning="Fallback: Overbought RSI",
+                signal="AVOID",
+                confidence=0.6,
+                reasoning=f"{prefix}Momentum sell (MACD bearish)",
                 stop_loss=None,
                 take_profit=None
             )
         else:
             return TradeSignal(
                 signal="WAIT",
-                confidence=0.7,
-                reasoning="Fallback: Neutral indicators, no clear signal",
+                confidence=0.5,
+                reasoning=f"{prefix}No clear directional signal",
                 stop_loss=None,
                 take_profit=None
             )
@@ -291,7 +301,7 @@ if __name__ == "__main__":
     print("=" * 60)
     
     # Initialize analyst
-    analyst = AgenticAnalyst(model_name="gemini-2.5-flash")
+    analyst = AgenticAnalyst(model_name="gemini-2.0-flash")
     
     # Mock test case: TSLA with concerning indicators
     print("\n📊 Test Case: TSLA with Mixed Signals")

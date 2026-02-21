@@ -1,20 +1,38 @@
-streamlit>=1.32.0
-google-genai>=1.0.0
-yfinance
-nselib
-pandas>=2.0.0
-numpy>=1.24.0
-beautifulsoup4>=4.12.0
-requests>=2.31.0
-python-dotenv>=1.0.0
-pytz>=2023.3
-pydantic>=2.0.0
+# ============================================================
+# Project Sentinel - Production Requirements
+# Pinned for reproducible builds on Render (Python 3.10)
+# ============================================================
 
-# LangGraph Multi-Agent System
-langgraph>=0.0.20
-langchain-core>=0.1.0
-langchain-google-genai>=0.0.6
+# --- Core Framework ---
+streamlit==1.41.1
 
-# God Mode UI
-psutil>=5.9.0
-graphviz>=0.20.0
+# --- AI / LLM ---
+google-generativeai==0.8.3        # Gemini direct SDK (analyst_agent_gemini.py)
+langchain-core==0.3.28
+langchain-google-genai==2.0.7     # Gemini via LangChain (supervisor.py)
+langgraph==0.2.60                  # Multi-agent orchestration
+
+# --- Data & Market ---
+yfinance==0.2.50
+pandas==2.2.3
+numpy==1.26.4
+beautifulsoup4==4.12.3
+requests==2.32.3
+
+# --- Database (Supabase) ---
+supabase==2.9.1
+postgrest==0.18.0
+
+# --- Utilities ---
+python-dotenv==1.0.1
+pydantic==2.10.4
+pytz==2024.2
+psutil==6.1.0                     # System monitoring (God Mode)
+
+# --- News ---
+# GNews is fetched via requests — no SDK needed
+
+# ============================================================
+# Development-only (not installed on Render)
+# Install with: pip install -r requirements-dev.txt
+# ============================================================

@@ -46,10 +46,17 @@ def get_market_status():
     IST = pytz.timezone('Asia/Kolkata')
     now = datetime.now(IST)
     
+    # Determine day type
+    if now.weekday() >= 5:
+        day_type = "Weekend"
+    else:
+        day_type = "Weekday"
+    
     return {
         'is_open': is_open,
         'message': message,
         'current_time': now.strftime('%I:%M %p IST'),
         'trading_hours': '9:15 AM - 3:30 PM IST',
-        'trading_days': 'Monday - Friday'
+        'trading_days': 'Monday - Friday',
+        'day_type': day_type
     }

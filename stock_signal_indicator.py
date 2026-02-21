@@ -33,15 +33,15 @@ def display_stock_signal(symbol: str):
         # Groww-style color coding
         if recommendation == 'BUY':
             color = "#00D09C"  # Groww Green
-            icon = ":material/trending_up:"
+            icon = "🟢" # Green circle
             bg_color = "#E6FAF5"  # Light mint
         elif recommendation == 'SELL':
             color = "#EB5B3C"  # Groww Red
-            icon = ":material/trending_down:"
+            icon = "🔴" # Red circle
             bg_color = "#FFECEA"  # Light red
         else:  # HOLD
             color = "#4A90E2"  # Blue
-            icon = ":material/remove:"
+            icon = "🔵" # Blue circle
             bg_color = "#E3F2FD"  # Light blue
         
         # Display badge
@@ -73,7 +73,7 @@ def display_stock_signal(symbol: str):
         return recommendation, confidence
         
     except Exception as e:
-        st.warning(f"Could not load signal: {str(e)}", icon=":material/warning:")
+        st.warning(f"Could not load signal: {str(e)}", icon="⚠️")
         return 'HOLD', 0.5
 
 
