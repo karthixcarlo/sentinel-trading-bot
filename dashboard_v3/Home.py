@@ -1,33 +1,50 @@
 # -*- coding: utf-8 -*-
 """
 Sentinel Trading Platform - Home Dashboard
-Gatekeeper: requires Supabase authentication before showing the app.
+Supports DEMO MODE (no Supabase) and LIVE MODE (with Supabase auth).
 """
 
 import streamlit as st
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add dashboard_v3/ dir and project root to path
+DASH_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(DASH_DIR)
+sys.path.insert(0, ROOT_DIR)
+sys.path.insert(0, DASH_DIR)
 
 from layout import setup_page_config, apply_groww_theme
 
-# ── Startup check ─────────────────────────────────────────────
-import auth_manager as auth
-
-# Page config (always runs first)
 setup_page_config("Sentinel - Dashboard", "📊")
 apply_groww_theme()
 
-# ── ENV CHECK ─────────────────────────────────────────────────
-if not auth.is_configured():
-    st.error("⚠️ Supabase not configured. Set SUPABASE_URL and SUPABASE_KEY in Railway environment variables.")
-    st.stop()
+# ── Check if Supabase is configured ──────────────────────────
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_ENABLED = bool(SUPABASE_URL and SUPABASE_KEY)
 
-# ── AUTH GATEKEEPER ───────────────────────────────────────────
-if not st.session_state.get("authenticated"):
+# ── DEMO MODE: auto-login without Supabase ────────────────────
+if not SUPABASE_ENABLED:
+    if not st.session_state.get("authenticated"):
+        st.session_state["authenticated"] = True
+        st.session_state["user_id"] = "demo-user"
+        st.session_state["user_email"] = "demo@sentinel.ai"
+        st.session_state["user_name"] = "Demo Trader"
+        st.session_state["demo_mode"] = True
+        # Initialize in-memory portfolio for demo
+        if "paper_portfolio" not in st.session_state:
+            st.session_state["paper_portfolio"] = {
+                "cash": 100000.0,
+                "positions": [],
+                "orders": []
+            }
 
-    # Hide sidebar completely until logged in
+# ── LIVE MODE: Supabase auth gatekeeper ───────────────────────
+elif not st.session_state.get("authenticated"):
+    import auth_manager as auth
+
+    # Hide sidebar until logged in
     st.markdown("""
         <style>
             [data-testid="stSidebar"] { display: none !important; }
@@ -35,35 +52,26 @@ if not st.session_state.get("authenticated"):
         </style>
     """, unsafe_allow_html=True)
 
-    # ── Login / Signup Card ──────────────────────────────────
     st.markdown("""
-        <div style="max-width:420px; margin:60px auto 0 auto;">
-            <div style="text-align:center; margin-bottom:32px;">
-                <h1 style="font-size:2rem; font-weight:800; color:#1A1D29;">Sentinel</h1>
-                <p style="color:#7C7E8C; margin-top:4px;">AI-Powered Trading Platform</p>
-            </div>
+        <div style="text-align:center; margin-top:60px; margin-bottom:32px;">
+            <h1 style="font-size:2rem; font-weight:800;">Sentinel</h1>
+            <p style="color:#7C7E8C;">AI-Powered Trading Platform</p>
         </div>
     """, unsafe_allow_html=True)
 
     col_left, card_col, col_right = st.columns([1, 2, 1])
-
     with card_col:
         tab_login, tab_signup = st.tabs(["Login", "Create Account"])
 
-        # ── LOGIN TAB ──
         with tab_login:
             with st.form("login_form"):
                 st.markdown("##### Welcome back")
-                email = st.text_input("Email", placeholder="you@example.com", key="login_email")
-                password = st.text_input("Password", type="password", key="login_password")
-                submitted = st.form_submit_button(
-                    "Sign In", type="primary", use_container_width=True
-                )
+                email = st.text_input("Email", placeholder="you@example.com")
+                password = st.text_input("Password", type="password")
+                submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
 
             if submitted:
-                if not email or not password:
-                    st.error("Please enter your email and password.")
-                else:
+                if email and password:
                     with st.spinner("Signing in..."):
                         result = auth.sign_in(email, password)
                     if result["success"]:
@@ -78,20 +86,17 @@ if not st.session_state.get("authenticated"):
                         st.rerun()
                     else:
                         st.error(f"Login failed: {result['error']}")
+                else:
+                    st.error("Enter email and password.")
 
-        # ── SIGNUP TAB ──
         with tab_signup:
             with st.form("signup_form"):
                 st.markdown("##### Create your account")
-                full_name = st.text_input("Full Name", placeholder="Your Name", key="signup_name")
-                new_email = st.text_input("Email", placeholder="you@example.com", key="signup_email")
-                new_password = st.text_input("Password", type="password", key="signup_password")
-                confirm_password = st.text_input(
-                    "Confirm Password", type="password", key="signup_confirm"
-                )
-                submitted_signup = st.form_submit_button(
-                    "Create Account", type="primary", use_container_width=True
-                )
+                full_name = st.text_input("Full Name", placeholder="Your Name")
+                new_email = st.text_input("Email", placeholder="you@example.com")
+                new_password = st.text_input("Password", type="password")
+                confirm_password = st.text_input("Confirm Password", type="password")
+                submitted_signup = st.form_submit_button("Create Account", type="primary", use_container_width=True)
 
             if submitted_signup:
                 if not full_name or not new_email or not new_password:
@@ -101,47 +106,60 @@ if not st.session_state.get("authenticated"):
                 elif len(new_password) < 6:
                     st.error("Password must be at least 6 characters.")
                 else:
-                    with st.spinner("Creating your account..."):
+                    with st.spinner("Creating account..."):
                         result = auth.sign_up(new_email, new_password, full_name)
                     if result["success"]:
-                        # Auto-initialize portfolio
                         auth.initialize_user_portfolio(result["user"].id)
-                        st.success("Account created! Please check your email to confirm, then log in.")
+                        st.success("Account created! Check your email to confirm, then log in.")
                     else:
                         st.error(f"Sign up failed: {result['error']}")
 
-    st.stop()  # Block the rest of the page until authenticated
+    st.stop()
 
-# ── AUTHENTICATED: Show Dashboard ─────────────────────────────
+# ── AUTHENTICATED: Main Dashboard ────────────────────────────
 from layout import render_navigation
 render_navigation()
 
-# Sign Out button in sidebar
+# Sidebar: user info + sign out
 with st.sidebar:
     st.markdown("---")
-    user_name = st.session_state.get("user_name", "User")
+    is_demo = st.session_state.get("demo_mode", False)
+    user_name = st.session_state.get("user_name", "Trader")
     user_email = st.session_state.get("user_email", "")
     st.markdown(f"**{user_name}**")
-    st.caption(user_email)
-    if st.button("Sign Out", use_container_width=True, type="secondary"):
-        auth.sign_out()
-        st.rerun()
+    if is_demo:
+        st.caption("🟡 Demo Mode")
+    else:
+        st.caption(user_email)
+        if st.button("Sign Out", use_container_width=True, type="secondary"):
+            import auth_manager as auth
+            auth.sign_out()
+            st.rerun()
 
-# ── Dashboard Content ─────────────────────────────────────────
+# ── Dashboard content ─────────────────────────────────────────
 st.title("Dashboard")
 st.markdown(f"Welcome back, **{st.session_state.get('user_name', 'Trader')}**!")
 
-# Fetch live portfolio from Supabase
-user_id = st.session_state["user_id"]
-portfolio = auth.get_user_portfolio(user_id)
+if st.session_state.get("demo_mode"):
+    st.info("🟡 Running in Demo Mode — data resets on page refresh. Connect Supabase for persistent accounts.")
 
-cash = portfolio.get("cash", 100000.0)
-positions = portfolio.get("positions", [])
-orders = portfolio.get("orders", [])
+# Portfolio data — from session state (demo) or Supabase (live)
+if SUPABASE_ENABLED and not st.session_state.get("demo_mode"):
+    import auth_manager as auth
+    user_id = st.session_state["user_id"]
+    portfolio = auth.get_user_portfolio(user_id)
+    cash = portfolio.get("cash", 100000.0)
+    positions = portfolio.get("positions", [])
+    orders = portfolio.get("orders", [])
+else:
+    p = st.session_state.get("paper_portfolio", {"cash": 100000.0, "positions": [], "orders": []})
+    cash = p["cash"]
+    positions = p["positions"]
+    orders = p["orders"]
 
 total_holdings = sum(
-    p.get("quantity", 0) * p.get("current_price", p.get("average_price", 0))
-    for p in positions
+    pos.get("quantity", 0) * pos.get("current_price", pos.get("average_price", 0))
+    for pos in positions
 )
 portfolio_value = cash + total_holdings
 
