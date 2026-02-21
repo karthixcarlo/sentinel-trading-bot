@@ -1,16 +1,15 @@
 # ============================================================
-# Project Sentinel - Production Requirements
-# Pinned for reproducible builds on Render (Python 3.10)
+# Project Sentinel - Production Requirements (Railway/Linux)
 # ============================================================
 
 # --- Core Framework ---
 streamlit==1.41.1
 
 # --- AI / LLM ---
-google-generativeai==0.8.3        # Gemini direct SDK (analyst_agent_gemini.py)
+google-generativeai==0.8.3
 langchain-core==0.3.28
-langchain-google-genai==2.0.7     # Gemini via LangChain (supervisor.py)
-langgraph==0.2.60                  # Multi-agent orchestration
+langchain-google-genai==2.0.7
+langgraph==0.2.60
 
 # --- Data & Market ---
 yfinance==0.2.50
@@ -19,20 +18,8 @@ numpy==1.26.4
 beautifulsoup4==4.12.3
 requests==2.32.3
 
-# --- Database (Supabase) ---
-supabase==2.9.1
-postgrest==0.18.0
-
 # --- Utilities ---
 python-dotenv==1.0.1
 pydantic==2.10.4
 pytz==2024.2
-psutil==6.1.0                     # System monitoring (God Mode)
-
-# --- News ---
-# GNews is fetched via requests — no SDK needed
-
-# ============================================================
-# Development-only (not installed on Render)
-# Install with: pip install -r requirements-dev.txt
-# ============================================================
+psutil==6.1.0
