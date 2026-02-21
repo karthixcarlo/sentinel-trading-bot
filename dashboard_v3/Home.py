@@ -110,9 +110,22 @@ elif not st.session_state.get("authenticated"):
                         result = auth.sign_up(new_email, new_password, full_name)
                     if result["success"]:
                         auth.initialize_user_portfolio(result["user"].id)
-                        st.success("Account created! Check your email to confirm, then log in.")
+                        st.success("Account created! You can now log in.")
                     else:
                         st.error(f"Sign up failed: {result['error']}")
+
+        # ── Demo bypass ─────────────────────────────────────
+        st.markdown("---")
+        st.markdown("<div style='text-align:center; color:#7C7E8C; font-size:0.85rem;'>Just exploring?</div>", unsafe_allow_html=True)
+        if st.button("Continue as Demo", use_container_width=True, type="secondary"):
+            st.session_state["authenticated"] = True
+            st.session_state["user_id"] = "demo-user"
+            st.session_state["user_email"] = "demo@sentinel.ai"
+            st.session_state["user_name"] = "Demo Trader"
+            st.session_state["demo_mode"] = True
+            st.session_state["paper_portfolio"] = {"cash": 100000.0, "positions": [], "orders": []}
+            st.rerun()
+
 
     st.stop()
 
