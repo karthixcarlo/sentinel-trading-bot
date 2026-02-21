@@ -1,228 +1,115 @@
 # -*- coding: utf-8 -*-
 """
-Stock Discovery - Multi-Page Dashboard
-Find top gainers, losers, and most active stocks with live data
+Stock Discovery - Find top gainers, losers, and most active NSE stocks
 """
 
 import streamlit as st
 import sys
 import os
 
-# Add parent directory to path so we can import layout
 PAGES_DIR = os.path.dirname(os.path.abspath(__file__))
 DASH_DIR  = os.path.dirname(PAGES_DIR)
 ROOT_DIR  = os.path.dirname(DASH_DIR)
 sys.path.insert(0, ROOT_DIR)
 sys.path.insert(0, DASH_DIR)
 
-try:
-    from live_nse_discovery import discover_live_stocks
-    from nse_stock_universe import get_stock_count
-    LIVE_DISCOVERY_AVAILABLE = True
-except ImportError:
-    LIVE_DISCOVERY_AVAILABLE = False
-
 from layout import setup_page_config, render_navigation, apply_groww_theme
 
-# Page setup
 setup_page_config("Stock Discovery", "🔍")
-
-# Apply theme
 apply_groww_theme()
-
-# Navigation
 render_navigation()
 
-# ============================================================================
-# CACHING - Performance Optimization
-# ============================================================================
+# ── NSE stock universe for discovery ──────────────────────────
+NSE_STOCKS = [
+    "RELIANCE.NS","TCS.NS","HDFCBANK.NS","INFY.NS","ICICIBANK.NS",
+    "HINDUNILVR.NS","SBIN.NS","BHARTIARTL.NS","KOTAKBANK.NS","BAJFINANCE.NS",
+    "AXISBANK.NS","MARUTI.NS","ASIANPAINT.NS","LTIM.NS","SUNPHARMA.NS",
+    "TITAN.NS","ONGC.NS","WIPRO.NS","ULTRACEMCO.NS","NESTLEIND.NS",
+    "POWERGRID.NS","NTPC.NS","HCLTECH.NS","TECHM.NS","SHREECEM.NS",
+    "DIVISLAB.NS","DRREDDY.NS","CIPLA.NS","BPCL.NS","COALINDIA.NS",
+]
 
-@st.cache_data(ttl=180)  # 3-minute cache for stock discovery
-def cached_discover_stocks(category, limit=24):
-    """Cached stock discovery to reduce API calls"""
-    
-    if LIVE_DISCOVERY_AVAILABLE:
-        try:
-            return discover_live_stocks(category=category, limit=limit, use_nifty_100=True)
-        except Exception as e:
-            st.warning(f"Live discovery failed: {str(e)}")
-    
-    # Fallback sample data
-    sample_stocks = {
-        "gainers": [
-            {"symbol": "TCS.NS", "price": 3680.75, "change_percent": 2.8},
-            {"symbol": "INFY.NS", "price": 1540.20, "change_percent": 3.2},
-            {"symbol": "RELIANCE.NS", "price": 2450.50, "change_percent": 3.1},
-            {"symbol": "HDFCBANK.NS", "price": 1650.00, "change_percent": 2.3},
-        ],
-        "losers": [
-            {"symbol": "BHARTIARTL.NS", "price": 1180.50, "change_percent": -2.1},
-            {"symbol": "MARUTI.NS", "price": 10250.20, "change_percent": -1.9},
-        ],
-        "active": [
-            {"symbol": "RELIANCE.NS", "price": 2450.50, "change_percent": 0.8},
-            {"symbol": "SBIN.NS", "price": 620.30, "change_percent": -0.5},
-        ]
-    }
-    
-    return sample_stocks.get(category, sample_stocks["gainers"])
+@st.cache_data(ttl=180)
+def fetch_stock_data(symbols):
+    """Fetch price data for a list of symbols via yfinance."""
+    try:
+        import yfinance as yf
+        results = []
+        for sym in symbols:
+            try:
+                t = yf.Ticker(sym)
+                hist = t.history(period="2d")
+                if len(hist) >= 2:
+                    current = float(hist["Close"].iloc[-1])
+                    prev    = float(hist["Close"].iloc[-2])
+                    chg_pct = ((current - prev) / prev) * 100
+                    vol     = int(hist["Volume"].iloc[-1])
+                    results.append({
+                        "symbol": sym,
+                        "name": sym.replace(".NS", ""),
+                        "price": current,
+                        "change_pct": chg_pct,
+                        "volume": vol,
+                    })
+            except Exception:
+                pass
+        return results
+    except Exception:
+        return []
 
-# ============================================================================
-# MAIN PAGE
-# ============================================================================
-
+# ── Page ──────────────────────────────────────────────────────
 st.title("Stock Discovery")
+st.caption("Live NSE/BSE data — 3-minute cache")
 
-if LIVE_DISCOVERY_AVAILABLE:
-    stock_count = get_stock_count()
-    st.caption(f"Scanning **{stock_count}+ NSE stocks** for opportunities")
-else:
-    st.caption("Showing sample NSE stocks")
+with st.spinner("Fetching live market data..."):
+    all_stocks = fetch_stock_data(NSE_STOCKS)
 
-# Tabs for different categories
-tab1, tab2, tab3 = st.tabs([
-    "Top Gainers",
-    "Top Losers",
-    "Most Active"
-])
+if not all_stocks:
+    st.error("Could not fetch market data. Please try again in a moment.")
+    st.stop()
 
-# ============================================================================
-# TOP GAINERS
-# ============================================================================
+gainers = sorted([s for s in all_stocks if s["change_pct"] > 0], key=lambda x: x["change_pct"], reverse=True)
+losers  = sorted([s for s in all_stocks if s["change_pct"] < 0], key=lambda x: x["change_pct"])
+active  = sorted(all_stocks, key=lambda x: x["volume"], reverse=True)
+
+def render_stock_cards(stocks, max_cards=12):
+    if not stocks:
+        st.info("No stocks found.")
+        return
+    for i in range(0, min(len(stocks), max_cards), 3):
+        cols = st.columns(3)
+        for j, col in enumerate(cols):
+            idx = i + j
+            if idx < len(stocks):
+                s = stocks[idx]
+                color = "#00D09C" if s["change_pct"] >= 0 else "#EB5B3C"
+                with col:
+                    with st.container(border=True):
+                        st.markdown(f"**{s['name']}**")
+                        st.markdown(
+                            f"₹{s['price']:,.2f} &nbsp; "
+                            f"<span style='color:{color};font-weight:700;'>{s['change_pct']:+.2f}%</span>",
+                            unsafe_allow_html=True
+                        )
+                        if st.button("Analyze", key=f"disc_{s['symbol']}_{i}_{j}", use_container_width=True):
+                            st.session_state["selected_stock"] = s["symbol"]
+                            st.switch_page("pages/3_Stock_Analyzer.py")
+
+tab1, tab2, tab3 = st.tabs(["Top Gainers", "Top Losers", "Most Active"])
 
 with tab1:
-    st.subheader("Top Gainers")
-    
-    # Progress bar while loading
-    with st.spinner("Fetching top gainers..."):
-        gainers = cached_discover_stocks("gainers", limit=24)
-    
-    st.write(f"Found {len(gainers)} gainers")
-
-    # Display as cards
-    for i in range(0, min(len(gainers), 24), 4):
-        cols = st.columns(4)
-        
-        for j, col in enumerate(cols):
-            if i + j < len(gainers):
-                stock = gainers[i + j]
-                symbol = stock.get('symbol', 'N/A')
-                clean_symbol = symbol.replace('.NS', '').replace('.BO', '')
-                price = stock.get('price', 0)
-                change = stock.get('change_percent', 0)
-                
-                with col:
-                    with st.container(border=True):
-                        st.markdown(f"**{clean_symbol}**")
-                        st.metric(
-                            label="Price",
-                            value=f"₹{price:,.2f}",
-                            delta=f"{change:+.2f}%",
-                            label_visibility="collapsed"
-                        )
-                        if st.button(
-                            "Analyze",
-                            key=f"analyze_{symbol}_{i}_{j}",
-                            use_container_width=True
-                        ):
-                            st.session_state.selected_stock = symbol
-                            st.switch_page("pages/3_Stock_Analyzer.py")
-
-# ============================================================================
-# TOP LOSERS
-# ============================================================================
+    st.subheader(f"Top Gainers ({len(gainers)})")
+    render_stock_cards(gainers)
 
 with tab2:
-    st.subheader("Top Losers")
-    
-    with st.spinner("Fetching top losers..."):
-        losers = cached_discover_stocks("losers", limit=24)
-    
-    st.write(f"Found {len(losers)} losers")
-    
-    # Display as cards
-    for i in range(0, min(len(losers), 24), 4):
-        cols = st.columns(4)
-        
-        for j, col in enumerate(cols):
-            if i + j < len(losers):
-                stock = losers[i + j]
-                symbol = stock.get('symbol', 'N/A')
-                clean_symbol = symbol.replace('.NS', '').replace('.BO', '')
-                price = stock.get('price', 0)
-                change = stock.get('change_percent', 0)
-                
-                with col:
-                    with st.container(border=True):
-                        st.markdown(f"**{clean_symbol}**")
-                        st.metric(
-                            label="Price",
-                            value=f"₹{price:,.2f}",
-                            delta=f"{change:+.2f}%",
-                            label_visibility="collapsed"
-                        )
-                        if st.button(
-                            "Analyze",
-                            key=f"analyze_{symbol}_{i}_{j}",
-                            use_container_width=True
-                        ):
-                            st.session_state.selected_stock = symbol
-                            st.switch_page("pages/3_Stock_Analyzer.py")
-
-# ============================================================================
-# MOST ACTIVE
-# ============================================================================
+    st.subheader(f"Top Losers ({len(losers)})")
+    render_stock_cards(losers)
 
 with tab3:
-    st.subheader("Most Active")
-    
-    with st.spinner("Fetching most active stocks..."):
-        active = cached_discover_stocks("active", limit=24)
-    
-    st.write(f"Found {len(active)} active stocks")
-    
-    # Display as cards
-    for i in range(0, min(len(active), 24), 4):
-        cols = st.columns(4)
-        
-        for j, col in enumerate(cols):
-            if i + j < len(active):
-                stock = active[i + j]
-                symbol = stock.get('symbol', 'N/A')
-                clean_symbol = symbol.replace('.NS', '').replace('.BO', '')
-                price = stock.get('price', 0)
-                change = stock.get('change_percent', 0)
-                
-                with col:
-                    with st.container(border=True):
-                        st.markdown(f"**{clean_symbol}**")
-                        st.metric(
-                            label="Price",
-                            value=f"₹{price:,.2f}",
-                            delta=f"{change:+.2f}%",
-                            label_visibility="collapsed"
-                        )
-                        if st.button(
-                            "Analyze",
-                            key=f"analyze_{symbol}_{i}_{j}",
-                            use_container_width=True
-                        ):
-                            st.session_state.selected_stock = symbol
-                            st.switch_page("pages/3_Stock_Analyzer.py")
-
-# ============================================================================
-# REFRESH DATA
-# ============================================================================
+    st.subheader(f"Most Active ({len(active)})")
+    render_stock_cards(active)
 
 st.markdown("---")
-
-col1, col2 = st.columns([3, 1])
-
-with col1:
-    st.caption("Data cached for 3 minutes. Click refresh to get latest prices.")
-
-with col2:
-    if st.button("Refresh Data", use_container_width=True):
-        cached_discover_stocks.clear()
-        st.success("Data refreshed!")
-        st.rerun()
+if st.button("Refresh Data"):
+    fetch_stock_data.clear()
+    st.rerun()
