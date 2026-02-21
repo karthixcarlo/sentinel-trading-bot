@@ -107,54 +107,25 @@ def fetch_stock_data(symbol):
 
 st.title("Stock Analyzer")
 
-# Stock selection
-if STOCK_SEARCH_AVAILABLE:
-    all_stocks = get_comprehensive_nse_list()
-    all_stocks_clean = [s.replace('.NS', '') for s in all_stocks]
-    st.caption(f"Search from **{len(all_stocks)} NSE stocks**")
-    
-    # Check if stock was selected from discovery
-    default_stock = st.session_state.get('selected_stock', None)
 # Stock selector
 st.subheader("Select Stock to Analyze")
 
-# Import stock names
-try:
-    from stock_names import get_all_stock_options, STOCK_NAME_MAP
-    # Get all stock options
-    stock_options = get_all_stock_options()
-except ImportError:
-    stock_options = []
-    STOCK_NAME_MAP = {}
+# Get default from session state (if user clicked Analyze in Discovery)
+default_stock = st.session_state.get('selected_stock', "RELIANCE.NS")
+if default_stock.endswith(".NS"):
+    default_stock = default_stock[:-3]
 
-# Add search box with autocomplete
-selected_option = st.selectbox(
-    "Search by company name or symbol",
-    options=[""] + stock_options,
-    format_func=lambda x: "Type to search..." if x == "" else x,
-    help="Start typing company name (e.g., 'Reliance', 'TCS') or symbol (e.g., 'INFY')"
-)
+# Search box
+user_input = st.text_input("Enter NSE Stock Symbol (e.g., RELIANCE, TCS, INFY)", value=default_stock).strip().upper()
 
-if selected_option:
-    # Extract symbol from selection (it's in format "Company Name (SYMBOL)")
-    if "(" in selected_option:
-        symbol_part = selected_option.split("(")[-1].replace(")", "").strip()
-        symbol = f"{symbol_part}.NS"
-    else:
-        # If user somehow got just the name, look it up
-        for name, sym in STOCK_NAME_MAP.items():
-            if name in selected_option:
-                symbol = sym
-                break
-        else:
-            # Fallback
-            symbol = f"{selected_option}.NS"
-else:
-    symbol = None
-
-if not symbol:
-    st.info("Select a stock to analyze")
+if not user_input:
+    st.info("Please enter a stock symbol to analyze.")
     st.stop()
+
+# Ensure we have .NS suffix for Indian stocks
+symbol = f"{user_input}.NS" if not user_input.endswith(".NS") else user_input
+st.session_state['selected_stock'] = symbol
+
 
 # ============================================================================
 # BUY/SELL SIGNAL
