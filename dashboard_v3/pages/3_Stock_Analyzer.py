@@ -9,11 +9,13 @@ import plotly.graph_objects as go
 import sys
 import os
 
-# Add parent directory to path so we can import layout
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add parent directory (dashboard_v3/) and project root to path
+PAGES_DIR = os.path.dirname(os.path.abspath(__file__))
+DASH_DIR  = os.path.dirname(PAGES_DIR)
+ROOT_DIR  = os.path.dirname(DASH_DIR)
+sys.path.insert(0, ROOT_DIR)   # project root (for database_manager etc.)
+sys.path.insert(0, DASH_DIR)   # dashboard_v3/ (for layout, auth_manager)
 
-# Add project root for other imports
-sys.path.insert(0, 'c:\\Users\\Karthi\\Desktop\\Agent')
 
 try:
     import yfinance as yf
