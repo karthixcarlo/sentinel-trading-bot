@@ -22,11 +22,8 @@ try:
 except ImportError:
     yf = None
 
-try:
-    from complete_nse_stocks import get_comprehensive_nse_list
-    STOCK_SEARCH_AVAILABLE = True
-except ImportError:
-    STOCK_SEARCH_AVAILABLE = False
+STOCK_SEARCH_AVAILABLE = False  # complete_nse_stocks was removed; yfinance used directly
+
 
 try:
     from stock_signal_indicator import display_stock_signal
