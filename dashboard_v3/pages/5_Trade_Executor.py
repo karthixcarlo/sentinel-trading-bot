@@ -52,16 +52,16 @@ with st.container(border=True):
 st.markdown("---")
 st.subheader("Place Order")
 
-default_stock = st.session_state.get("selected_stock", "")
-if default_stock:
-    default_stock = default_stock.replace(".NS", "")
+    default_stock = st.session_state.get("selected_stock", "RELIANCE.NS")
+    if default_stock.endswith(".NS"):
+        default_stock = default_stock[:-3]
 
-with st.form("trade_form", clear_on_submit=False):
-    col1, col2 = st.columns(2)
-    with col1:
-        symbol = st.text_input("Stock Symbol", value=default_stock, placeholder="e.g., RELIANCE, TCS")
-    with col2:
-        side = st.radio("Action", ["BUY", "SELL"], horizontal=True)
+    with st.form("trade_form", clear_on_submit=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            symbol = st.text_input("Stock Symbol (e.g., RELIANCE, TCS)", value=default_stock).strip().upper()
+        with col2:
+            side = st.radio("Action", ["BUY", "SELL"], horizontal=True)
 
     quantity = st.number_input("Quantity", min_value=1, value=1, step=1)
     order_type = st.selectbox("Order Type", ["MARKET", "LIMIT"])
