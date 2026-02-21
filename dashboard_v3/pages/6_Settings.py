@@ -13,6 +13,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from layout import setup_page_config, render_navigation, apply_groww_theme
+import auth_manager as auth
 
 # Page setup
 setup_page_config("Settings", "⚙️")
@@ -22,6 +23,13 @@ apply_groww_theme()
 
 # Navigation
 render_navigation()
+
+# Auth guard
+if not st.session_state.get("authenticated"):
+    st.warning("Please log in to access settings.")
+    if st.button("Go to Login"):
+        st.switch_page("Home.py")
+    st.stop()
 
 st.title("Settings")
 
@@ -160,17 +168,8 @@ with col2:
 
 st.markdown("---")
 
-# Reset portfolio
-st.subheader("Reset Portfolio")
-
-st.warning("This will reset your portfolio to initial state and delete all positions and orders!")
-
-if st.button("Reset Portfolio", type="secondary"):
-    st.session_state.paper_portfolio = {
-        'cash': st.session_state.settings['initial_capital'],
-        'positions': [],
-        'orders': []
-    }
-    st.success("Portfolio reset!")
-    st.toast("Portfolio reset to initial state")
-    st.rerun()
+# Account info
+st.markdown("---")
+st.subheader("Account")
+st.info(f"Logged in as: **{st.session_state.get('user_email', 'Unknown')}**")
+st.caption("Your portfolio is permanently stored in the cloud. Trade history is your financial ledger and cannot be reset.")
