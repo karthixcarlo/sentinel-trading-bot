@@ -110,9 +110,11 @@ async def login(req: LoginRequest):
 
 
 @app.get("/api/portfolio/{user_id}")
-async def get_portfolio(user_id: str):
-    """Retrieves the user's cash and holdings from PostgreSQL. Returns demo data when Supabase is unavailable."""
-    portfolio = auth.get_user_portfolio(user_id)
+async def get_portfolio(user_id: str, current_user: str = Depends(get_current_user)):
+    """Retrieves the user's cash and holdings. Uses JWT-authenticated user_id when token is provided."""
+    # If caller passed a real JWT, use that identity; otherwise use path param (demo mode)
+    resolved_id = current_user if current_user != "demo_user" else user_id
+    portfolio = auth.get_user_portfolio(resolved_id)
     if not portfolio.get("success"):
         # Return fallback demo data so the UI still renders (Supabase may be unconfigured)
         return {
