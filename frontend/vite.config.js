@@ -7,6 +7,9 @@ const BACKEND_PORT = 8001;
 
 export default defineConfig({
     plugins: [react()],
+    optimizeDeps: {
+        include: ['@supabase/supabase-js'],
+    },
     server: {
         port: 5173,
         open: true,
