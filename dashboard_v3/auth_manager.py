@@ -5,7 +5,10 @@ Handles all user authentication and database operations for Project Sentinel
 """
 
 import os
-import streamlit as st
+try:
+    import streamlit as st
+except ImportError:
+    st = None  # Optional when running FastAPI backend (no Streamlit)
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -94,9 +97,9 @@ def sign_out() -> None:
         client.auth.sign_out()
     except Exception:
         pass
-    # Clear all auth-related session state keys
-    for key in ["user_id", "user_email", "user_name", "authenticated"]:
-        st.session_state.pop(key, None)
+    if st is not None:
+        for key in ["user_id", "user_email", "user_name", "authenticated"]:
+            st.session_state.pop(key, None)
 
 
 # ----------------------------------------------------------------
