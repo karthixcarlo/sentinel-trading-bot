@@ -47,6 +47,41 @@ async def health_check():
         "uptime_human": f"{int(uptime_secs // 3600)}h {int((uptime_secs % 3600) // 60)}m {int(uptime_secs % 60)}s",
     }
 
+# --- JWT AUTH ---
+_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
+_http_bearer = HTTPBearer(auto_error=False)
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Security(_http_bearer)
+) -> str:
+    """
+    Extracts and verifies the Supabase JWT from the Authorization header.
+    Returns the user's UUID (sub claim).
+    Falls back to 'demo_user' when Supabase is not configured or no token provided.
+    """
+    if credentials is None:
+        return "demo_user"
+    token = credentials.credentials
+    if not _JWT_SECRET:
+        # Supabase not configured — decode without verification for demo mode
+        try:
+            payload = _jwt.decode(token, options={"verify_signature": False})
+            return payload.get("sub", "demo_user")
+        except Exception:
+            return "demo_user"
+    try:
+        payload = _jwt.decode(
+            token, _JWT_SECRET,
+            algorithms=["HS256"],
+            audience="authenticated"
+        )
+        return payload["sub"]
+    except _jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired.")
+    except _jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+
+
 # --- MODELS ---
 class LoginRequest(BaseModel):
     email: str
