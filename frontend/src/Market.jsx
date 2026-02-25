@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Activity, BarChart2, RefreshCw } from 'lucide-react';
+import { BASE_URL } from './api';
 
 const DEMO_INDICES = [
     { name: "Nifty 50", value: 22150.50, change: 1.25 },
@@ -34,8 +35,8 @@ export default function Market() {
     const fetchData = () => {
         setLoading(true);
         Promise.all([
-            fetch('/api/market/indices').then(r => r.json()),
-            fetch('/api/market/discover').then(r => r.json()),
+            fetch(`${BASE_URL}/api/market/indices`).then(r => r.json()),
+            fetch(`${BASE_URL}/api/market/discover`).then(r => r.json()),
         ])
             .then(([idxData, stockData]) => {
                 if (Array.isArray(idxData) && idxData.length > 0) setIndices(idxData);

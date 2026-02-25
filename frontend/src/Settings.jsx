@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Save, ShieldAlert, BadgeCheck, Check } from 'lucide-react';
+import { BASE_URL } from './api';
 
 export default function Settings() {
     const [loading, setLoading] = useState(true);
@@ -15,7 +16,7 @@ export default function Settings() {
     const availableSectors = ['IT', 'Banking', 'Energy', 'Automobile', 'FMCG', 'Pharma', 'Metals'];
 
     useEffect(() => {
-        fetch('/api/settings/demo_user')
+        fetch(`${BASE_URL}/api/settings/demo_user`)
             .then(r => r.json())
             .then(d => {
                 setFormData({
@@ -41,7 +42,7 @@ export default function Settings() {
         setSaving(true);
         try {
             // API call to the FastAPI implementation we define next
-            const response = await fetch('/api/settings/demo_user', {
+            const response = await fetch(`${BASE_URL}/api/settings/demo_user`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Bot, Play, Square, Activity, Clock, BarChart2, Zap, AlertCircle } from 'lucide-react';
+import { BASE_URL, WS_BASE } from './api';
 
 const AGENT_COLORS = {
     Supervisor: '#00D09C', Analyst: '#3B82F6', RiskManager: '#F59E0B',
@@ -26,7 +27,7 @@ export default function AutonomousControl() {
     const feedRef = useRef(null);
 
     const fetchStatus = () => {
-        fetch('/api/agent/status')
+        fetch(`${BASE_URL}/api/agent/status`)
             .then(r => r.json())
             .then(d => { 
                 setStatus(d); 
@@ -36,7 +37,7 @@ export default function AutonomousControl() {
     };
 
     const fetchTrades = () => {
-        fetch('/api/agent/trades')
+        fetch(`${BASE_URL}/api/agent/trades`)
             .then(r => r.json())
             .then(d => setTrades(d.trades || []))
             .catch(() => {});
@@ -58,8 +59,7 @@ export default function AutonomousControl() {
     // WebSocket for live neural feed
     useEffect(() => {
         const connect = () => {
-            const wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-            const ws = new WebSocket(`${wsProto}://${window.location.host}/ws/neural-feed`);
+            const ws = new WebSocket(`${WS_BASE}/ws/neural-feed`);
             wsRef.current = ws;
             ws.onopen = () => console.log('Neural Feed WebSocket connected');
             ws.onmessage = (evt) => {
@@ -80,8 +80,8 @@ export default function AutonomousControl() {
         setToggling(true);
         try {
             const endpoint = isRunning
-                ? '/api/agent/stop'
-                : '/api/agent/start';
+                ? `${BASE_URL}/api/agent/stop`
+                : `${BASE_URL}/api/agent/start`;
             const res = await fetch(endpoint, { method: 'POST' });
             const data = await res.json();
             setStatus(prev => ({ ...prev, running: !isRunning }));

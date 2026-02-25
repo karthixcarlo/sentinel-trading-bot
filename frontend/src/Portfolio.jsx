@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, ArrowUpRight, ArrowDownRight, AlertCircle, RefreshCw, Zap } from 'lucide-react';
+import { BASE_URL } from './api';
 
 const DEMO = {
     cash: 100000, positions: [], portfolio_value: 100000,
@@ -30,7 +31,7 @@ export default function Portfolio() {
 
     const fetchPortfolio = () => {
         setLoading(true);
-        fetch('/api/portfolio/demo_user/detail')
+        fetch(`${BASE_URL}/api/portfolio/demo_user/detail`)
             .then(r => {
                 if (!r.ok) throw new Error('Backend not reachable');
                 return r.json();

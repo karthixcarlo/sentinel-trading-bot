@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Activity, Terminal, ShieldAlert, Cpu, Database, CheckCircle2, Zap, BarChart2 } from 'lucide-react';
+import { BASE_URL, WS_BASE } from './api';
 
 const AGENT_COLORS = {
     Supervisor: '#8B5CF6', Scout: '#3B82F6', Analyst: '#00D09C', 
@@ -25,13 +26,13 @@ export default function GodMode() {
 
     // Fetch agent status
     useEffect(() => {
-        fetch('/api/agent/status')
+        fetch(`${BASE_URL}/api/agent/status`)
             .then(r => r.json())
             .then(d => setAgentStatus(d))
             .catch(() => {});
         
         const interval = setInterval(() => {
-            fetch('/api/agent/status')
+            fetch(`${BASE_URL}/api/agent/status`)
                 .then(r => r.json())
                 .then(d => setAgentStatus(d))
                 .catch(() => {});
@@ -42,8 +43,7 @@ export default function GodMode() {
 
     useEffect(() => {
         // 1. Connect to our new FastAPI WebSocket endpoint for live neural feed
-        const wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        const ws = new WebSocket(`${wsProto}://${window.location.host}/ws/neural-feed`);
+        const ws = new WebSocket(`${WS_BASE}/ws/neural-feed`);
 
         ws.onopen = () => {
             setIsConnected(true);

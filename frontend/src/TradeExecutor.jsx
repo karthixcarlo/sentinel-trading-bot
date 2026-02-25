@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Zap, AlertCircle, CheckCircle, ArrowLeft, ChevronDown } from 'lucide-react';
+import { BASE_URL } from './api';
 
 export default function TradeExecutor() {
     const navigate = useNavigate();
@@ -17,7 +18,7 @@ export default function TradeExecutor() {
     const [previewPrice, setPreviewPrice] = useState(null);
 
     const refreshPortfolio = () => {
-        fetch('/api/portfolio/demo_user/detail')
+        fetch(`${BASE_URL}/api/portfolio/demo_user/detail`)
             .then(r => { if (!r.ok) throw new Error('non-2xx'); return r.json(); })
             .then(setPortfolio)
             .catch(() => setPortfolio({ cash: 100000, portfolio_value: 100000, positions: [] }));
@@ -29,7 +30,7 @@ export default function TradeExecutor() {
     useEffect(() => {
         if (!symbol || symbol.length < 2) { setPreviewPrice(null); return; }
         const t = setTimeout(() => {
-            fetch(`/api/market/ohlcv/${symbol}.NS`)
+            fetch(`${BASE_URL}/api/market/ohlcv/${symbol}.NS`)
                 .then(r => r.json())
                 .then(data => {
                     if (data.ohlc && data.ohlc.length > 0)
@@ -60,7 +61,7 @@ export default function TradeExecutor() {
                 order_type: orderType,
                 limit_price: orderType === 'LIMIT' ? parseFloat(limitPrice) : null,
             };
-            const res = await fetch('/api/trade/execute', {
+            const res = await fetch(`${BASE_URL}/api/trade/execute`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
