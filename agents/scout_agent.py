@@ -192,16 +192,52 @@ def scout_node(state: SentinelState) -> SentinelState:
         Updated SentinelState with selected ticker
     """
     
+    _bc = state.get('broadcast_callback')
+
     print(f"\n🕵️  Scout Agent: Scanning market using Rolling Batch strategy...\n")
-    
+    if _bc:
+        _bc("Scout", "🔍 Scanning market using Rolling Batch strategy...")
+
     try:
+        # --- Sector filtering from user settings ---
+        user_settings = state.get('user_settings', {})
+        allowed_sectors = user_settings.get('allowed_sectors', [])
+
+        SECTOR_STOCKS = {
+            "IT":         ["TCS.NS", "INFY.NS", "WIPRO.NS", "HCLTECH.NS"],
+            "Banking":    ["HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "KOTAKBANK.NS"],
+            "Energy":     ["RELIANCE.NS", "ONGC.NS", "BPCL.NS"],
+            "Automobile": ["MARUTI.NS", "TATAMOTORS.NS", "BAJAJ-AUTO.NS"],
+            "FMCG":       ["ITC.NS", "HINDUNILVR.NS", "BRITANNIA.NS"],
+            "Pharma":     ["SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS"],
+            "Metals":     ["TATASTEEL.NS", "JSWSTEEL.NS", "HINDALCO.NS"],
+        }
+
+        if allowed_sectors:
+            # Build sector-specific universe
+            sector_tickers = set()
+            for sector in allowed_sectors:
+                sector_tickers.update(SECTOR_STOCKS.get(sector, []))
+            if _bc:
+                _bc("Scout", f"Filtering by sectors: {', '.join(allowed_sectors)} ({len(sector_tickers)} stocks)")
+        else:
+            sector_tickers = None  # no filtering
+
         # Get market loader
         loader = get_market_loader()
-        
+
         # Get random batch
         batch = loader.get_smart_batch(size=BATCH_SIZE)
-        print(f"🔭 Scouting batch: {batch[:5]}... (+{len(batch)-5} more)")
-        
+
+        # Apply sector filter if configured
+        if sector_tickers:
+            batch = [t for t in batch if t in sector_tickers]
+            # If filtered batch is too small, use sector tickers directly
+            if len(batch) < 5:
+                batch = list(sector_tickers)
+
+        print(f"🔭 Scouting batch: {batch[:5]}... (+{max(len(batch)-5, 0)} more)")
+
         # Filter already traded stocks
         traded_tickers = state.get('traded_tickers', [])
         batch = [t for t in batch if t not in traded_tickers]
@@ -257,6 +293,8 @@ def scout_node(state: SentinelState) -> SentinelState:
         direction = "🟢 UP" if best_momentum > 0 else "🔴 DOWN"
         message = f"🕵️ Scout: Found opportunity → {best_ticker.replace('.NS', '')} {direction} {abs(best_momentum):.2f}% | Price: ₹{best_price:,.2f}"
         state['messages'].append(HumanMessage(content=message))
+        if _bc:
+            _bc("Scout", f"📈 {best_ticker.replace('.NS', '')} {direction} {abs(best_momentum):.2f}% @ ₹{best_price:,.2f} (from {len(quality_stocks)} quality stocks)")
         
         # Log to database
         try:

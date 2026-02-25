@@ -75,8 +75,12 @@ Current State:
 - Errors: {len(state.get('errors', []))}
 """
     
+    _bc = state.get('broadcast_callback')
+
     print(f"👔 Supervisor: Evaluating workflow state (iteration {state.get('iteration_count', 0)})...")
-    
+    if _bc:
+        _bc("Supervisor", f"Evaluating workflow state (iteration {state.get('iteration_count', 0)})")
+
     try:
         # Call Gemini for decision
         llm = ChatGoogleGenerativeAI(
@@ -119,6 +123,8 @@ Current State:
         )
         
         print(f"✅ Supervisor: Routing to {next_agent.upper()}")
+        if _bc:
+            _bc("Supervisor", f"Routing → {emoji} {next_agent.upper()}")
         
     except Exception as e:
         # Error handling - use fallback logic
@@ -159,7 +165,16 @@ def fallback_decision(state: SentinelState) -> str:
     if signal in ['WAIT', 'AVOID']:
         return 'scout'
     
-    if signal == 'BUY' and confidence >= 0.7:
+    # --- DYNAMIC RULES ENGINE INTEGRATION ---
+    threshold = 0.7 # Default Moderate
+    if 'user_settings' in state and state['user_settings']:
+        risk = state['user_settings'].get('risk_appetite', 'Moderate')
+        if risk == 'Conservative':
+            threshold = 0.85
+        elif risk == 'Aggressive':
+            threshold = 0.55
+            
+    if signal == 'BUY' and confidence >= threshold:
         # Check if risk has approved
         if state.get('risk_approval') is False and state.get('trade_status') == 'PENDING':
             return 'risk'
