@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { ArrowLeft, Activity, ShieldCheck, LineChart } from 'lucide-react';
+import { BASE_URL } from './api';
 
 export default function Analyze() {
     const { ticker } = useParams();
@@ -12,7 +13,7 @@ export default function Analyze() {
 
     useEffect(() => {
         setLoading(true);
-        fetch(`/api/market/analyze/${ticker}`)
+        fetch(`${BASE_URL}/api/market/analyze/${ticker}`)
             .then(res => {
                 if (!res.ok) throw new Error("Failed to generate Neural Analysis payload");
                 return res.json();

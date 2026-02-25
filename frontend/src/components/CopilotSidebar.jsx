@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bot, X, Send, User, Zap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { BASE_URL } from '../api';
 
 const QUICK_PROMPTS = [
     "Why did you make your last trade?",
@@ -53,7 +54,7 @@ export default function CopilotSidebar() {
         setIsTyping(true);
 
         try {
-            const response = await fetch('/api/chat/copilot', {
+            const response = await fetch(`${BASE_URL}/api/chat/copilot`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: messageText, user_id: 'demo_user' }),
