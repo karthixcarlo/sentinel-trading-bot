@@ -116,8 +116,12 @@ def analyst_node(state: SentinelState) -> SentinelState:
         )
         return state
     
+    _bc = state.get('broadcast_callback')
+
     print(f"🧠 Analyst Agent: Analyzing {ticker}...")
-    
+    if _bc:
+        _bc("Analyst", f"📊 Analyzing {ticker} with Gemini AI...")
+
     try:
         # 1. Fetch technical data
         technical_data = calculate_technical_indicators(ticker)
@@ -181,6 +185,8 @@ def analyst_node(state: SentinelState) -> SentinelState:
         state['messages'].append(AIMessage(content=message))
         
         print(f"✅ Analyst: {signal.signal} @ {confidence_pct:.0f}% confidence")
+        if _bc:
+            _bc("Analyst", f"{'🟢' if signal.signal == 'BUY' else '🔴' if signal.signal == 'AVOID' else '⚪'} {signal.signal} ({confidence_pct:.0f}%) — {signal.reasoning[:150]}")
         
     except Exception as e:
         # Error handling

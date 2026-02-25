@@ -21,10 +21,17 @@ from langchain_core.messages import AIMessage
 from sentinel_state import SentinelState
 
 
-# Risk configuration
-MIN_CONFIDENCE = 0.7  # 70% minimum confidence for trades
+# Risk configuration defaults
+DEFAULT_CONFIDENCE = 0.70
 MAX_RISK_PER_TRADE = 0.02  # 2% max risk
 DAILY_LOSS_LIMIT = 500  # ₹500 max daily loss
+
+# Dynamic thresholds based on user risk appetite (from Settings page)
+RISK_THRESHOLDS = {
+    "Conservative": 0.85,
+    "Moderate": 0.70,
+    "Aggressive": 0.55,
+}
 
 
 def calculate_daily_pnl(portfolio: dict) -> float:
@@ -67,13 +74,27 @@ def risk_node(state: SentinelState) -> SentinelState:
         Updated SentinelState with risk_approval set
     """
     
+    _bc = state.get('broadcast_callback')
+
     signal_data = state.get('analyst_signal', {})
     portfolio = state.get('portfolio_snapshot', {})
-    
+
     signal = signal_data.get('signal', 'WAIT')
     confidence = signal_data.get('confidence', 0.0)
-    
-    print(f"🛡️  Risk Manager: Evaluating {signal} signal @ {confidence:.0%} confidence...")
+
+    # Dynamic confidence threshold from user settings
+    user_settings = state.get('user_settings', {})
+    risk_appetite = user_settings.get('risk_appetite', 'Moderate')
+    min_confidence = RISK_THRESHOLDS.get(risk_appetite, DEFAULT_CONFIDENCE)
+
+    # Dynamic max position size from user settings
+    max_position_pct = user_settings.get('max_position_pct', MAX_RISK_PER_TRADE)
+    if isinstance(max_position_pct, (int, float)) and max_position_pct > 1:
+        max_position_pct = max_position_pct / 100.0  # convert 10 → 0.10
+
+    print(f"🛡️  Risk Manager: Evaluating {signal} signal @ {confidence:.0%} confidence (threshold: {min_confidence:.0%} [{risk_appetite}])...")
+    if _bc:
+        _bc("Risk", f"Evaluating {signal} @ {confidence:.0%} confidence (threshold: {min_confidence:.0%} [{risk_appetite}])")
     
     # Initialize as rejected by default
     state['risk_approval'] = False
@@ -86,10 +107,10 @@ def risk_node(state: SentinelState) -> SentinelState:
         print(f"✅ Risk: Auto-rejected {signal} signal")
         return state
     
-    # 2. Check confidence threshold
-    if confidence < MIN_CONFIDENCE:
+    # 2. Check confidence threshold (dynamic based on risk appetite)
+    if confidence < min_confidence:
         state['messages'].append(
-            AIMessage(content=f"🛡️ Risk: REJECTED - Confidence too low ({confidence:.0%} < {MIN_CONFIDENCE:.0%})")
+            AIMessage(content=f"🛡️ Risk: REJECTED - Confidence too low ({confidence:.0%} < {min_confidence:.0%} [{risk_appetite}])")
         )
         print(f"❌ Risk: Rejected - Low confidence")
         return state
@@ -104,8 +125,8 @@ def risk_node(state: SentinelState) -> SentinelState:
         print("❌ Risk: Rejected - No cash")
         return state
     
-    # 4. Calculate max position size
-    max_position = cash * MAX_RISK_PER_TRADE
+    # 4. Calculate max position size (dynamic from settings)
+    max_position = cash * max_position_pct
     
     # 5. Check daily loss limit
     daily_pnl = calculate_daily_pnl(portfolio)
@@ -126,7 +147,9 @@ def risk_node(state: SentinelState) -> SentinelState:
     )
     
     print(f"✅ Risk: APPROVED - Max position: ₹{max_position:,.0f}")
-    
+    if _bc:
+        _bc("Risk", f"✅ APPROVED | {signal} ({confidence:.0%}) | Max ₹{max_position:,.0f}")
+
     return state
 
 
