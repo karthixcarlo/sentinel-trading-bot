@@ -23,7 +23,7 @@ _START_TIME = time.time()
 app = FastAPI(title="Project Sentinel API", version="2.0.0")
 
 # CORS — read allowed origins from env, default to local dev
-_CORS_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+_CORS_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,https://sentinel-trading-bot.vercel.app").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _CORS_ORIGINS],
