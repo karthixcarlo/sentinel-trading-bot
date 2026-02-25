@@ -1,7 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './AuthContext.jsx'
+import { supabase } from './supabaseClient.js'
 import Layout from './Layout.jsx'
+import Auth from './Auth.jsx'
 import Dashboard from './Dashboard.jsx'
 import Market from './Market.jsx'
 import Discover from './Discover.jsx'
@@ -13,23 +16,40 @@ import AutonomousControl from './AutonomousControl.jsx'
 import Settings from './Settings.jsx'
 import './index.css'
 
+function ProtectedRoute({ children }) {
+    const { user, loading } = useAuth();
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-[#00D09C]/30 border-t-[#00D09C] rounded-full animate-spin" />
+            </div>
+        );
+    }
+    // Demo mode (no Supabase configured) or authenticated — allow through
+    if (!supabase || user) return children;
+    return <Navigate to="/auth" replace />;
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route element={<Layout />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/market" element={<Market />} />
-                    <Route path="/discover" element={<Discover />} />
-                    <Route path="/analyze/:ticker" element={<Analyze />} />
-                    <Route path="/portfolio" element={<Portfolio />} />
-                    <Route path="/trade" element={<TradeExecutor />} />
-                    <Route path="/god-mode" element={<GodMode />} />
-                    <Route path="/autonomous" element={<AutonomousControl />} />
-                    <Route path="/settings" element={<Settings />} />
-                </Route>
-            </Routes>
+            <AuthProvider>
+                <Routes>
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/market" element={<Market />} />
+                        <Route path="/discover" element={<Discover />} />
+                        <Route path="/analyze/:ticker" element={<Analyze />} />
+                        <Route path="/portfolio" element={<Portfolio />} />
+                        <Route path="/trade" element={<TradeExecutor />} />
+                        <Route path="/god-mode" element={<GodMode />} />
+                        <Route path="/autonomous" element={<AutonomousControl />} />
+                        <Route path="/settings" element={<Settings />} />
+                    </Route>
+                </Routes>
+            </AuthProvider>
         </BrowserRouter>
     </React.StrictMode>,
 )
