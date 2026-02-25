@@ -19,6 +19,11 @@ CREATE INDEX IF NOT EXISTS watchlists_user_id_idx ON public.watchlists (user_id)
 ALTER TABLE public.watchlists ENABLE ROW LEVEL SECURITY;
 
 -- 4. RLS Policies — users can only see and modify their own rows
+--    DROP first so this script is safe to re-run on an existing database
+DROP POLICY IF EXISTS "Users can view own watchlist"    ON public.watchlists;
+DROP POLICY IF EXISTS "Users can add to own watchlist"  ON public.watchlists;
+DROP POLICY IF EXISTS "Users can delete from own watchlist" ON public.watchlists;
+
 CREATE POLICY "Users can view own watchlist"
     ON public.watchlists FOR SELECT
     USING (auth.uid() = user_id);
