@@ -3,6 +3,12 @@
 # Only track: agents/, dashboard_v3/, core *.py, config files
 # ============================================================
 
+# --- Node / Frontend ---
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
 # --- Local dev tools (never push) ---
 dev_sync_watcher.py
 
