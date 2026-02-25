@@ -1,9 +1,10 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, BarChart2, Compass, Briefcase, Zap,
-    Terminal, Bot, Settings as SettingsIcon, Cpu
+    Terminal, Bot, Settings as SettingsIcon, Cpu, LogOut
 } from 'lucide-react';
+import { useAuth } from './AuthContext';
 
 const NAV_ITEMS = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
