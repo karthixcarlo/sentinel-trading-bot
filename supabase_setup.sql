@@ -32,15 +32,28 @@ CREATE POLICY "Users can delete from own watchlist"
     USING (auth.uid() = user_id);
 
 -- ============================================================
--- Optional: auto-create portfolio row when a new user signs up
+-- Auto-create portfolio row when a new user signs up.
+-- SECURITY DEFINER + empty search_path is required by Supabase
+-- to prevent search_path hijacking attacks.
+-- The EXCEPTION block ensures a trigger failure never blocks signup.
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
 BEGIN
     INSERT INTO public.portfolios (user_id, cash_balance)
     VALUES (NEW.id, 100000.0)
     ON CONFLICT (user_id) DO NOTHING;
+
     RETURN NEW;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log the error but never let the trigger crash the signup
+        RAISE WARNING 'handle_new_user: could not create portfolio for user %: %', NEW.id, SQLERRM;
+        RETURN NEW;
 END;
 $$;
 
