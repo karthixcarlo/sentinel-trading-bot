@@ -58,16 +58,27 @@ export default function Sidebar() {
                 ))}
             </nav>
 
-            {/* User Info */}
+            {/* User Info + Logout */}
             <div className="p-4 border-t border-groww-gray/10">
-                <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-groww-green/20 text-groww-green flex items-center justify-center font-bold mr-3 text-sm">
-                        D
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-groww-green/20 text-groww-green flex items-center justify-center font-bold mr-3 text-sm flex-shrink-0">
+                            {avatar}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-bold text-groww-dark truncate">{displayName}</p>
+                            <p className="text-xs text-groww-gray truncate">{displayEmail}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-sm font-bold text-groww-dark">Demo User</p>
-                        <p className="text-xs text-groww-gray">demo@sentinel.ai</p>
-                    </div>
+                    {user && (
+                        <button
+                            onClick={handleLogout}
+                            title="Log out"
+                            className="ml-2 p-1.5 rounded-lg text-groww-gray hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                        >
+                            <LogOut size={15} />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
