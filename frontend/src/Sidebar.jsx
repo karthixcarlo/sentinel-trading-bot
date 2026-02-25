@@ -18,6 +18,17 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar() {
+    const { user, signOut } = useAuth();
+    const navigate = useNavigate();
+    const displayEmail = user?.email || 'demo@sentinel.ai';
+    const displayName = user ? displayEmail.split('@')[0] : 'Demo User';
+    const avatar = displayName.charAt(0).toUpperCase();
+
+    const handleLogout = async () => {
+        if (signOut) await signOut();
+        navigate('/auth');
+    };
+
     return (
         <div className="w-64 bg-white border-r border-groww-gray/20 h-screen fixed top-0 left-0 hidden md:flex flex-col shadow-sm z-40">
             {/* Logo */}
