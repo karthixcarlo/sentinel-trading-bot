@@ -7,6 +7,9 @@ const BACKEND_PORT = 8001;
 
 export default defineConfig({
     plugins: [react()],
+    resolve: {
+        conditions: ['import', 'browser', 'module', 'jsnext:main', 'jsnext'],
+    },
     optimizeDeps: {
         include: ['@supabase/supabase-js'],
     },
