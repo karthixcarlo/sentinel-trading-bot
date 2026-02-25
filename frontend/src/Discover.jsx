@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, ArrowDownRight, Search, Activity, TrendingUp, Filter } from 'lucide-react';
 import TradingChart from './components/TradingChart';
+import { BASE_URL } from './api';
 
 export default function Discover() {
     const navigate = useNavigate();
@@ -12,7 +13,7 @@ export default function Discover() {
 
     useEffect(() => {
         setLoading(true);
-        fetch('/api/market/discover')
+        fetch(`${BASE_URL}/api/market/discover`)
             .then(res => res.json())
             .then(data => {
                 setMarketData(Array.isArray(data) ? data : []);

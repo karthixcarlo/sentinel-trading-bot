@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Briefcase, Activity, AlertCircle, ArrowUpRight, ShieldCheck } from 'lucide-react';
 import TradingChart from './components/TradingChart';
+import { BASE_URL } from './api';
 
 export default function Dashboard() {
     const [portfolio, setPortfolio] = useState(null);
@@ -8,7 +9,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         const userId = "demo_user";
-        fetch(`/api/portfolio/${userId}`)
+        fetch(`${BASE_URL}/api/portfolio/${userId}`)
             .then(res => res.json())
             .then(data => {
                 // Ensure valid structure (API may return error object or missing fields)
