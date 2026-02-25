@@ -588,6 +588,86 @@ async def update_settings(user_id: str, settings: UserSettings):
     return {"status": "success", "message": "Agent constraints updated and applied."}
 
 
+# --- WATCHLIST ENDPOINTS ---
+
+import sqlite3 as _wl_sqlite
+
+def _ensure_watchlist_table():
+    conn = _wl_sqlite.connect(os.path.join(ROOT_DIR, "sentinel.db"))
+    conn.execute("""CREATE TABLE IF NOT EXISTS watchlists (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        ticker TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(user_id, ticker)
+    )""")
+    conn.commit(); conn.close()
+
+class WatchlistAddRequest(BaseModel):
+    ticker: str
+
+@app.get("/api/watchlist")
+async def get_watchlist(current_user: str = Depends(get_current_user)):
+    """Returns the authenticated user's watchlist tickers."""
+    # Try Supabase first
+    try:
+        client = auth.get_client()
+        result = client.table("watchlists").select("id, ticker, created_at") \
+            .eq("user_id", current_user).order("created_at", desc=True).execute()
+        return {"items": result.data or []}
+    except Exception:
+        pass
+    # SQLite fallback
+    _ensure_watchlist_table()
+    conn = _wl_sqlite.connect(os.path.join(ROOT_DIR, "sentinel.db"))
+    rows = conn.execute(
+        "SELECT id, ticker, created_at FROM watchlists WHERE user_id=? ORDER BY id DESC",
+        (current_user,)
+    ).fetchall()
+    conn.close()
+    return {"items": [{"id": r[0], "ticker": r[1], "created_at": r[2]} for r in rows]}
+
+@app.post("/api/watchlist")
+async def add_to_watchlist(req: WatchlistAddRequest, current_user: str = Depends(get_current_user)):
+    """Adds a ticker to the user's watchlist."""
+    ticker = req.ticker.upper().strip()
+    # Try Supabase first
+    try:
+        client = auth.get_client()
+        client.table("watchlists").insert({"user_id": current_user, "ticker": ticker}).execute()
+        return {"status": "success", "ticker": ticker}
+    except Exception:
+        pass
+    # SQLite fallback
+    _ensure_watchlist_table()
+    try:
+        conn = _wl_sqlite.connect(os.path.join(ROOT_DIR, "sentinel.db"))
+        conn.execute("INSERT OR IGNORE INTO watchlists (user_id, ticker) VALUES (?,?)", (current_user, ticker))
+        conn.commit(); conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "success", "ticker": ticker}
+
+@app.delete("/api/watchlist/{ticker}")
+async def remove_from_watchlist(ticker: str, current_user: str = Depends(get_current_user)):
+    """Removes a ticker from the user's watchlist."""
+    ticker = ticker.upper().strip()
+    # Try Supabase first
+    try:
+        client = auth.get_client()
+        client.table("watchlists").delete() \
+            .eq("user_id", current_user).eq("ticker", ticker).execute()
+        return {"status": "success", "ticker": ticker}
+    except Exception:
+        pass
+    # SQLite fallback
+    _ensure_watchlist_table()
+    conn = _wl_sqlite.connect(os.path.join(ROOT_DIR, "sentinel.db"))
+    conn.execute("DELETE FROM watchlists WHERE user_id=? AND ticker=?", (current_user, ticker))
+    conn.commit(); conn.close()
+    return {"status": "success", "ticker": ticker}
+
+
 # --- MARKET INDICES ENDPOINT ---
 
 @app.get("/api/market/indices")
