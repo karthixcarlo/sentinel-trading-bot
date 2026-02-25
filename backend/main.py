@@ -2,11 +2,13 @@ import sys
 import os
 import time
 import logging
-from fastapi import FastAPI, Depends, BackgroundTasks, WebSocket, HTTPException
+from fastapi import FastAPI, Depends, BackgroundTasks, WebSocket, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import asyncio
 import json
+import jwt as _jwt
 
 # Add project root to path so we can import dashboard_v3 modules
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
