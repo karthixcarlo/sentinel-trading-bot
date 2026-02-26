@@ -484,6 +484,26 @@ async def get_agent_status():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/api/autonomous/status")
+async def get_autonomous_status():
+    """
+    Lightweight endpoint: returns only the fields the UI needs to reflect
+    server-side autonomous state (running flag + start_time).  Kept separate
+    from /api/agent/status so the frontend can poll this cheaply without
+    fetching the full portfolio payload.
+    """
+    try:
+        svc = get_agent_service()
+        return {
+            "running": svc.status.value == "running",
+            "status": svc.status.value,
+            "start_time": svc.start_time.isoformat() + "Z" if svc.start_time else None,
+            "workflow_id": svc.workflow_id,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/agent/portfolio")
 async def get_agent_portfolio():
     """

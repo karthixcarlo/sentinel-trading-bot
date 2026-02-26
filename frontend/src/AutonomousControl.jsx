@@ -18,7 +18,8 @@ function AgentBadge({ name }) {
 }
 
 export default function AutonomousControl() {
-    const [status, setStatus] = useState({ status: 'idle', portfolio: {}, performance: {}, recent_thoughts: [] });
+    // null = still loading from server (prevents false "stopped" flash on mount)
+    const [status, setStatus] = useState({ status: 'idle', running: null, start_time: null, portfolio: {}, performance: {}, recent_thoughts: [] });
     const [trades, setTrades] = useState([]);
     const [loading, setLoading] = useState(true);
     const [toggling, setToggling] = useState(false);
@@ -26,12 +27,21 @@ export default function AutonomousControl() {
     const wsRef = useRef(null);
     const feedRef = useRef(null);
 
+    // Lightweight poll — syncs running state from server without the full payload
+    const fetchAutonomousStatus = () => {
+        fetch(`${BASE_URL}/api/autonomous/status`)
+            .then(r => r.json())
+            .then(d => setStatus(prev => ({ ...prev, running: d.running, status: d.status, start_time: d.start_time, workflow_id: d.workflow_id })))
+            .catch(() => {});
+    };
+
+    // Full status fetch — used on mount and after toggle
     const fetchStatus = () => {
         fetch(`${BASE_URL}/api/agent/status`)
             .then(r => r.json())
-            .then(d => { 
-                setStatus(d); 
-                setLoading(false); 
+            .then(d => {
+                setStatus(d);
+                setLoading(false);
             })
             .catch(() => setLoading(false));
     };
@@ -43,16 +53,20 @@ export default function AutonomousControl() {
             .catch(() => {});
     };
 
-    // API returns { running: bool } — not { status: "running" }
+    // null while loading — avoids rendering "stopped" before the server responds
     const isRunning = status.running === true;
 
     useEffect(() => {
+        // Full fetch on mount to get portfolio + thoughts
         fetchStatus();
         fetchTrades();
+
+        // Lightweight 30-second heartbeat keeps the toggle accurate
+        // even after tab hibernation or page navigation
         const interval = setInterval(() => {
-            fetchStatus();
+            fetchAutonomousStatus();
             fetchTrades();
-        }, 5000);
+        }, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -83,8 +97,11 @@ export default function AutonomousControl() {
                 ? `${BASE_URL}/api/agent/stop`
                 : `${BASE_URL}/api/agent/start`;
             const res = await fetch(endpoint, { method: 'POST' });
-            const data = await res.json();
-            setStatus(prev => ({ ...prev, running: !isRunning }));
+            if (res.ok) {
+                // Optimistic update so the toggle flips instantly
+                setStatus(prev => ({ ...prev, running: !isRunning, status: !isRunning ? 'running' : 'stopped' }));
+            }
+            // Confirm with the actual server state
             fetchStatus();
         } catch { }
         setToggling(false);
@@ -119,17 +136,27 @@ export default function AutonomousControl() {
                         {/* Agent Status Card */}
                         <div className="bg-white rounded-2xl border border-black/5 shadow-sm p-6">
                             <h2 className="text-sm font-bold text-[#444444] uppercase tracking-wider mb-4">Agent Status</h2>
-                            <div className="flex items-center mb-6">
-                                <div className={`w-4 h-4 rounded-full mr-3 flex-shrink-0 ${isRunning ? 'bg-[#00D09C] animate-pulse' : 'bg-[#444444]/30'}`}></div>
+                            <div className="flex items-center mb-4">
+                                <div className={`w-4 h-4 rounded-full mr-3 flex-shrink-0 ${loading ? 'bg-[#444444]/20' : isRunning ? 'bg-[#00D09C] animate-pulse' : 'bg-[#444444]/30'}`}></div>
                                 <div>
-                                    <p className="font-bold text-lg">{isRunning ? 'RUNNING' : status.status.toUpperCase()}</p>
-                                    <p className="text-xs text-[#444444]">{isRunning ? 'Agent is actively scanning markets' : 'Agent is idle'}</p>
+                                    <p className="font-bold text-lg">
+                                        {loading ? 'CHECKING…' : isRunning ? 'RUNNING' : (status.status || 'idle').toUpperCase()}
+                                    </p>
+                                    <p className="text-xs text-[#444444]">
+                                        {loading ? 'Syncing with server…' : isRunning ? 'Agent is actively scanning markets' : 'Agent is idle'}
+                                    </p>
                                 </div>
                             </div>
+                            {isRunning && status.start_time && (
+                                <p className="text-xs text-[#00D09C] mb-4 flex items-center">
+                                    <Clock size={12} className="mr-1" />
+                                    Running since {new Date(status.start_time).toLocaleTimeString()}
+                                </p>
+                            )}
                             <button
                                 onClick={toggleAgent}
-                                disabled={toggling}
-                                className={`w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center transition-all ${toggling ? 'bg-black/10 text-[#444444] cursor-not-allowed' :
+                                disabled={toggling || loading}
+                                className={`w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center transition-all ${(toggling || loading) ? 'bg-black/10 text-[#444444] cursor-not-allowed' :
                                     isRunning
                                         ? 'bg-[#EB5B3C]/10 text-[#EB5B3C] hover:bg-[#EB5B3C] hover:text-white border border-[#EB5B3C]/20'
                                         : 'bg-[#00D09C] text-white hover:bg-[#00C090] shadow-lg shadow-[#00D09C]/20'}`}>

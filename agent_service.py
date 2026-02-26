@@ -149,6 +149,7 @@ class AgentService:
         self.user_id = user_id
         self.status = AgentStatus.IDLE
         self.workflow_id = ""
+        self.start_time: Optional[datetime] = None   # set when agent starts, cleared on stop
         self.current_thoughts: List[AgentThought] = []
         self.websocket_callback: Optional[Callable] = None
         self.portfolio = Portfolio(user_id=user_id, cash=100000.0)
@@ -256,6 +257,7 @@ class AgentService:
     async def start_autonomous_mode(self):
         """Start the autonomous trading loop using the real LangGraph pipeline."""
         self.status = AgentStatus.RUNNING
+        self.start_time = datetime.utcnow()
         self.workflow_id = f"auto-{uuid.uuid4().hex[:8]}"
         await self.broadcast_thought("System", "🚀 Autonomous mode started — LangGraph pipeline active")
         asyncio.create_task(self._autonomous_loop())
@@ -263,6 +265,7 @@ class AgentService:
     async def stop_autonomous_mode(self):
         """Stop the autonomous trading loop."""
         self.status = AgentStatus.STOPPED
+        self.start_time = None
         await self.broadcast_thought("System", "🛑 Autonomous mode stopped")
 
     # ------------------------------------------------------------------
@@ -447,6 +450,7 @@ class AgentService:
             "running": self.status == AgentStatus.RUNNING,
             "status": self.status.value,
             "workflow_id": self.workflow_id,
+            "start_time": self.start_time.isoformat() + "Z" if self.start_time else None,
             "portfolio": self.portfolio.to_dict(),
             "performance": self.performance_stats,
             "recent_thoughts": [t.to_dict() for t in self.current_thoughts[-20:]],
