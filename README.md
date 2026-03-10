@@ -3,115 +3,212 @@
 **Autonomous AI Trading System for Indian Stock Markets (NSE/BSE)**
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.41+-red.svg)](https://streamlit.io/)
+[![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2+-orange.svg)](https://langchain-ai.github.io/langgraph/)
-[![Gemini](https://img.shields.io/badge/AI-Google%20Gemini%202.0-4285F4.svg)](https://ai.google.dev/)
+[![Gemini](https://img.shields.io/badge/AI-Google%20Gemini%202.5%20Flash-4285F4.svg)](https://ai.google.dev/)
+[![Supabase](https://img.shields.io/badge/Auth-Supabase-3FCF8E.svg)](https://supabase.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
 ## Overview
 
-Sentinel is a **production-grade autonomous paper trading platform** built on a **LangGraph multi-agent system** powered by **Google Gemini 2.0 Flash**. Five specialized AI agents work together 24/7 to discover stocks, analyze them with AI + technical indicators, assess risk, and execute paper trades on the NSE/BSE.
+Sentinel is a **production-grade autonomous paper trading platform** built on a **LangGraph multi-agent system** powered by **Google Gemini 2.5 Flash**. Five specialized AI agents work together to discover stocks, analyze them with AI + technical indicators, assess risk with configurable thresholds, and execute paper trades on the NSE.
 
----
-
-## Beta Wokring Portfolio
-
-Link : https://sentinel-dashboard-production.up.railway.app
-
-Note: This is sample of this project,still the web app part is under development.The engine ( Lang graph Agent is Production ready and scalable)
+**Live Demo:** [sentinel-trading-bot.vercel.app](https://sentinel-trading-bot.vercel.app)
 
 ---
 
 ## Architecture
 
 ```
-Supervisor Agent
-    ├── Scout Agent        → Discovers tradeable NSE/BSE stocks
-    ├── Analyst Agent      → AI analysis (Gemini 2.0 + RSI/MACD/Bollinger Bands)
-    ├── Risk Manager       → Validates position sizing & risk limits
-    └── Trader Agent       → Executes paper trades & updates portfolio
+┌──────────────────────────────────────────────────────────────────┐
+│  Vercel (Frontend)           │  Render (Backend)                 │
+│  React + Vite + TailwindCSS  │  FastAPI + LangGraph + SQLite     │
+│  Port 5173 (dev)             │  Port 8001 (dev)                  │
+│                              │                                   │
+│  VITE_API_URL ──────────────▶│  REST API + WebSocket              │
+│  VITE_SUPABASE_URL ─────────▶│  JWT verification                  │
+└──────────────────────────────┴───────────────────────────────────┘
+                                        │
+                                        ▼
+                               ┌────────────────┐
+                               │   Supabase      │
+                               │   PostgreSQL    │
+                               │   + Auth + RLS  │
+                               └────────────────┘
 ```
 
-All agents share a typed **LangGraph StateGraph** and route through the Supervisor using conditional edges. The system runs 24/7 via `run_autonomous.py`, respecting NSE market hours (9:15 AM – 3:30 PM IST).
+### LangGraph Multi-Agent Pipeline
+
+```
+Supervisor Agent (Gemini — routing decisions)
+    ├── Scout Agent        → Discovers tradeable NSE stocks via yfinance
+    ├── Analyst Agent      → Gemini 2.5 Flash AI analysis + RSI/MACD/Bollinger
+    ├── Risk Manager       → Dynamic confidence thresholds from user settings
+    └── Trade Executor     → Paper trades → SQLite/Supabase logging
+```
+
+All agents share a typed **LangGraph StateGraph** (`sentinel_state.py`) and route through the Supervisor using conditional edges. The system runs in 5-minute cycles, respecting NSE market hours (9:15 AM – 3:30 PM IST).
 
 ---
 
 ## Key Features
 
-### AI & Multi-Agent
+### AI & Multi-Agent System
 - **5 LangGraph Agents** — Supervisor, Scout, Analyst, Risk Manager, Trader
-- **Google Gemini 2.0 Flash** — Powers AI stock analysis with structured JSON outputs
-- **RAG Pipeline** — Combines real-time news (GNews API) with technical indicators as LLM context
-- **Pydantic Validation** — Type-safe structured outputs (`BUY / WAIT / AVOID` signals with confidence scores)
-- **Fallback Mode** — Rule-based analysis (RSI + MACD) when AI is unavailable
+- **Google Gemini 2.5 Flash** — Powers AI stock analysis with structured JSON outputs
+- **Configurable Risk Thresholds** — Conservative (85%), Moderate (70%), Aggressive (55%) confidence gates
+- **Sector Filtering** — IT, Banking, Energy, Automobile, FMCG, Pharma, Metals
+- **Real-time WebSocket Feed** — Live agent thoughts streamed to the UI
 
-### Dashboard (8 Pages)
+### Frontend (React + Vite)
+
 | Page | Description |
 |------|-------------|
-| Home | Portfolio overview, market status, watchlist |
-| Market Overview | Live NIFTY 50, SENSEX, BANKNIFTY indices |
-| Stock Discovery | Top gainers, losers, most active NSE stocks |
-| Stock Analyzer | AI signals, charts, technical indicators |
-| Portfolio | Holdings, P&L, order history |
-| Trade Executor | Manual buy/sell with market hours validation |
-| Settings | Capital, watchlist, API configuration |
-| God Mode | Live agent activity monitor with state inspector |
+| **Dashboard** | Portfolio overview, market stats, quick actions |
+| **Trading Chart** | Interactive candlestick + volume chart (lightweight-charts v5) |
+| **Autonomous Control** | Start/stop agent, live thought feed, server-synced state |
+| **God Mode** | Real-time WebSocket neural feed from all agents |
+| **Portfolio** | Holdings, P&L, trade history |
+| **Market / Discover** | Sector browsing, top movers |
+| **Analyze** | AI-powered stock analysis view |
+| **Trade Executor** | Manual buy/sell with market hours validation |
+| **Settings** | Risk appetite, max position %, allowed sectors |
+
+### Authentication & Security
+- **Supabase Auth** — Email/password signup with JWT sessions
+- **Demo Mode** — Full access without signup when Supabase is not configured
+- **Protected Routes** — React `ProtectedRoute` wrapper with auth redirect
+- **Backend JWT Verification** — PyJWT validates Supabase tokens; graceful demo fallback
+- **Row Level Security** — PostgreSQL RLS policies on all user data
 
 ### Autonomous System
-- **24/7 Operation** — Auto-restarts, error recovery, rate limiting
-- **Database Logging** — SQLite tracks every agent thought and workflow
-- **Autonomous Control UI** — Start/stop agents from the dashboard
+- **Server-Side State** — Running status persists across page navigation and tab hibernation
+- **Lightweight Polling** — `/api/autonomous/status` endpoint for cheap 30-second heartbeats
+- **Auto Error Recovery** — Max 5 consecutive errors before pause, 1-minute backoff
+- **Uptime Tracking** — `start_time` shown in the UI as "Running since HH:MM:SS"
 
 ---
 
 ## Quick Start
 
 ### Prerequisites
-- Python 3.10+
-- Google Gemini API key → [Get free key](https://aistudio.google.com/apikey)
-- GNews API key → [Get free key](https://gnews.io) *(100 requests/day free)*
+
+- **Python 3.10+**
+- **Node.js 20+**
+- **Google Gemini API key** — [Get free key](https://aistudio.google.com/apikey)
 
 ### Installation
 
 ```bash
 git clone https://github.com/karthixcarlo/sentinel-trading-bot.git
 cd sentinel-trading-bot
+```
 
+#### Backend
+
+```bash
 python -m venv .venv
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # macOS/Linux
+.venv\Scripts\activate          # Windows
+# source .venv/bin/activate     # macOS/Linux
 
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 
-copy .env.example .env
-# Edit .env — add GEMINI_API_KEY, GNEWS_API_KEY
+# Create .env in project root
+echo "GEMINI_API_KEY=your_key_here" > .env
 ```
 
-### Run Dashboard
+#### Frontend
 
 ```bash
-streamlit run dashboard_v3/Home.py --server.port 8501
+cd frontend
+npm ci
 ```
-Open → **http://localhost:8501**
 
-### Run Autonomous System (Optional)
+### Run Locally
+
+Start both servers (in separate terminals):
 
 ```bash
-python run_autonomous.py
+# Terminal 1 — Backend (port 8001)
+cd backend
+uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+# Terminal 2 — Frontend (port 5173)
+cd frontend
+npm run dev
 ```
 
-Runs agents 24/7. Pauses automatically when market is closed.
+Open **http://localhost:5173** — The Vite dev server proxies `/api` and `/ws` requests to the backend automatically.
 
 ---
 
 ## Environment Variables
 
-```env
-GEMINI_API_KEY=your_gemini_key_here
-GNEWS_API_KEY=your_gnews_key_here
-```
+### Backend (.env)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | Yes | Google Gemini API key for AI agents |
+| `SUPABASE_URL` | No | Supabase project URL (demo mode if omitted) |
+| `SUPABASE_KEY` | No | Supabase service role key |
+| `SUPABASE_JWT_SECRET` | No | Supabase JWT secret for token verification |
+| `ALLOWED_ORIGINS` | No | Comma-separated CORS origins (defaults include localhost + Vercel) |
+
+### Frontend (Vercel Environment Variables)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_API_URL` | Yes (prod) | Backend URL (e.g., `https://your-app.onrender.com`) |
+| `VITE_SUPABASE_URL` | No | Supabase project URL (demo mode if omitted) |
+| `VITE_SUPABASE_ANON_KEY` | No | Supabase anon/public key |
+
+---
+
+## API Reference
+
+### Health & Status
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/health` | Health check with uptime and version |
+| `GET` | `/api/agent/status` | Full agent status (running, portfolio, thoughts) |
+| `GET` | `/api/autonomous/status` | Lightweight: running flag + start_time only |
+
+### Agent Control
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/agent/start` | Start autonomous trading loop |
+| `POST` | `/api/agent/stop` | Stop autonomous trading loop |
+| `GET` | `/api/agent/thoughts?limit=50` | Recent agent thought log |
+| `GET` | `/api/agent/trades?limit=50` | Trade history |
+| `GET` | `/api/agent/portfolio` | Current portfolio state |
+
+### Market Data
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/market-data/{symbol}` | OHLCV candlestick data via yfinance |
+| `GET` | `/api/analyze/{symbol}` | AI analysis for a stock |
+
+### User Data (JWT-protected)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/portfolio/{user_id}` | User portfolio |
+| `GET/POST` | `/api/settings/{user_id}` | User settings (risk appetite, sectors) |
+| `GET` | `/api/watchlist` | User watchlist |
+| `POST` | `/api/watchlist` | Add ticker to watchlist |
+| `DELETE` | `/api/watchlist/{ticker}` | Remove ticker from watchlist |
+
+### WebSocket
+
+| Endpoint | Description |
+|----------|-------------|
+| `ws://host/ws/neural-feed` | Real-time agent thought stream |
 
 ---
 
@@ -119,33 +216,48 @@ GNEWS_API_KEY=your_gnews_key_here
 
 ```
 sentinel-trading-bot/
-├── agents/                        # LangGraph agent nodes
-│   ├── supervisor.py              # Orchestrates routing
-│   ├── scout_agent.py             # Stock discovery
-│   ├── analyst_agent.py           # LangGraph analyst wrapper
-│   ├── risk_manager.py            # Trade validation
+├── backend/
+│   ├── main.py                    # FastAPI app — all REST + WebSocket endpoints
+│   └── requirements.txt           # Python dependencies
+├── frontend/
+│   ├── src/
+│   │   ├── api.js                 # BASE_URL + WS_BASE (env-driven)
+│   │   ├── main.jsx               # Routes + ProtectedRoute
+│   │   ├── Auth.jsx               # Login / signup page
+│   │   ├── AuthContext.jsx        # Supabase auth provider + useAuth hook
+│   │   ├── supabaseClient.js      # Supabase client (null in demo mode)
+│   │   ├── Sidebar.jsx            # Navigation + user profile
+│   │   ├── Dashboard.jsx          # Portfolio overview
+│   │   ├── AutonomousControl.jsx  # Agent start/stop + server-synced state
+│   │   ├── GodMode.jsx            # WebSocket neural feed
+│   │   ├── Portfolio.jsx          # Holdings + P&L
+│   │   ├── Settings.jsx           # User preferences
+│   │   ├── TradeExecutor.jsx      # Manual trade entry
+│   │   ├── Analyze.jsx            # AI analysis view
+│   │   ├── Market.jsx             # Market overview
+│   │   ├── Discover.jsx           # Sector browsing
+│   │   └── components/
+│   │       ├── TradingChart.jsx   # lightweight-charts v5 candlestick
+│   │       └── CopilotSidebar.jsx # AI chat assistant
+│   ├── vite.config.js             # Dev proxy + resolve.conditions
+│   ├── vercel.json                # Forces npm ci on Vercel
+│   ├── package.json               # Dependencies (supabase@2.39.3 pinned)
+│   └── tailwind.config.js         # Tailwind theme
+├── agents/
+│   ├── supervisor.py              # LangGraph routing agent
+│   ├── scout_agent.py             # Stock discovery (yfinance)
+│   ├── analyst_agent.py           # Gemini AI analysis
+│   ├── risk_manager.py            # Dynamic risk thresholds
 │   └── trader_agent.py            # Order execution
-├── dashboard_v3/                  # Streamlit dashboard
-│   ├── Home.py                    # Entry point
-│   ├── layout.py                  # Global CSS/theme
-│   ├── navigation.py              # Top nav bar
-│   ├── market_hours.py            # NSE/BSE hours logic
-│   ├── premium_theme.py           # Design tokens
-│   └── pages/                     # 8 dashboard pages
-├── .github/workflows/deploy.yml   # CI/CD pipeline
-├── analyst_agent_gemini.py        # Core Gemini AI integration
-├── sentinel_hive.py               # LangGraph StateGraph
-├── sentinel_state.py              # Shared agent state (TypedDict)
-├── run_autonomous.py              # 24/7 autonomous runner
-├── database_manager.py            # SQLite logging
-├── market_loader.py               # Live market data (yfinance)
-├── paper_trading_portfolio.py     # Virtual portfolio management
-├── nse_stock_universe.py          # NSE/BSE stock universe
-├── stock_signal_indicator.py      # Signal display helper
-├── init_schema.sql                # Supabase PostgreSQL schema
-├── render.yaml                    # Render deployment blueprint
-├── requirements.txt               # Pinned dependencies
-└── .env.example                   # Environment template
+├── agent_service.py               # AgentService singleton (runs LangGraph)
+├── sentinel_hive.py               # LangGraph StateGraph definition
+├── sentinel_state.py              # Shared typed state (TypedDict)
+├── broker_engine.py               # Trade execution engine
+├── supabase_setup.sql             # Idempotent DB schema + RLS + triggers
+├── dev_sync_watcher.py            # Auto git push on file changes
+├── Procfile                       # Render/Heroku deployment
+├── .github/workflows/ci.yml       # CI: Python compile + Node build
+└── .gitignore                     # node_modules, dist, .env excluded
 ```
 
 ---
@@ -154,25 +266,54 @@ sentinel-trading-bot/
 
 | Layer | Technology |
 |-------|-----------|
-| **Orchestration** | LangGraph 0.2, LangChain Core |
-| **AI / LLM** | Google Gemini 2.0 Flash |
-| **Frontend** | Streamlit 1.41, Custom CSS |
-| **Market Data** | yfinance (NSE/BSE live prices) |
-| **News / RAG** | GNews API |
+| **AI / LLM** | Google Gemini 2.5 Flash |
+| **Agent Orchestration** | LangGraph 0.2, LangChain Core |
+| **Frontend** | React 18, Vite 5, TailwindCSS 3, lightweight-charts v5 |
+| **Backend** | FastAPI, Uvicorn, WebSocket |
+| **Auth** | Supabase Auth, PyJWT |
+| **Market Data** | yfinance (NSE live prices) |
 | **Database** | SQLite (local), Supabase PostgreSQL (cloud) |
-| **Deployment** | Render (Web + Worker), GitHub Actions CI/CD |
-| **Validation** | Pydantic 2.x |
+| **Frontend Hosting** | Vercel |
+| **Backend Hosting** | Render |
+| **CI/CD** | GitHub Actions |
 
 ---
 
 ## Deployment
 
-The project includes production deployment configuration:
-- **`render.yaml`** — Deploys Streamlit dashboard + background worker on Render
-- **`init_schema.sql`** — Supabase PostgreSQL schema with Row Level Security
-- **`.github/workflows/deploy.yml`** — CI/CD: test → deploy on push to `main`
+### Frontend → Vercel
 
-See the [deployment guide](https://github.com/karthixcarlo/sentinel-trading-bot#readme) for step-by-step instructions.
+1. Import repo on [vercel.com](https://vercel.com)
+2. Set **Root Directory** to `frontend`
+3. Set **Framework Preset** to `Vite`
+4. Add environment variables: `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+5. Deploy — Vercel runs `npm ci && npm run build` automatically
+
+### Backend → Render
+
+1. Create a **Web Service** on [render.com](https://render.com)
+2. Connect the GitHub repo
+3. Set **Build Command**: `pip install -r backend/requirements.txt`
+4. Set **Start Command**: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+5. Add environment variables: `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET`, `ALLOWED_ORIGINS`
+
+### Database → Supabase
+
+1. Create a project on [supabase.com](https://supabase.com)
+2. Open **SQL Editor** and run `supabase_setup.sql` (idempotent — safe to re-run)
+3. Copy your project URL, anon key, and JWT secret to the environment variables above
+
+---
+
+## Risk Thresholds
+
+The Risk Manager agent uses configurable confidence thresholds set from the Settings page:
+
+| Risk Appetite | Min Confidence | Description |
+|---------------|----------------|-------------|
+| **Conservative** | 85% | Only high-conviction trades pass through |
+| **Moderate** | 70% | Balanced risk/reward (default) |
+| **Aggressive** | 55% | More trades, higher risk tolerance |
 
 ---
 
@@ -186,6 +327,6 @@ This is a **paper trading platform for educational purposes only**. No real mone
 
 **Built by [Karthi](https://github.com/karthixcarlo)**
 
-⭐ Star this repo if you find it useful!
+Star this repo if you find it useful!
 
 </div>
