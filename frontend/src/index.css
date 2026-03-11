@@ -5,6 +5,26 @@
 body {
   margin: 0;
   font-family: 'DM Sans', sans-serif;
-  background-color: #F0F2F6;
-  color: #111111;
+  background-color: #0B0F19;
+  color: #E1E5EA;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar — dark theme */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0B0F19; }
+::-webkit-scrollbar-thumb { background: #1E2636; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2A3442; }
+
+/* Terminal typewriter cursor for Reasoning Engine */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.cursor-blink::after {
+  content: '▋';
+  animation: blink 1s step-end infinite;
+  color: #00D09C;
+  margin-left: 2px;
 }
