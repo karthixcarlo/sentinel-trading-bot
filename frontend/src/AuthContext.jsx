@@ -3,6 +3,8 @@ import { supabase } from './supabaseClient';
 
 const AuthContext = createContext(null);
 
+const DEMO_USER = { id: 'demo_user', email: 'demo@sentinel.com', role: 'demo' };
+
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [session, setSession] = useState(null);
@@ -15,10 +17,19 @@ export function AuthProvider({ children }) {
             return;
         }
 
-        // Load existing session on mount
+        // Load existing session on mount — with timeout to handle Supabase outages
+        const timeout = setTimeout(() => {
+            // If Supabase hasn't responded in 5s, stop blocking the UI
+            setLoading(false);
+        }, 5000);
+
         supabase.auth.getSession().then(({ data: { session } }) => {
+            clearTimeout(timeout);
             setSession(session);
             setUser(session?.user ?? null);
+            setLoading(false);
+        }).catch(() => {
+            clearTimeout(timeout);
             setLoading(false);
         });
 
@@ -28,8 +39,17 @@ export function AuthProvider({ children }) {
             setUser(session?.user ?? null);
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            clearTimeout(timeout);
+            subscription.unsubscribe();
+        };
     }, []);
+
+    const enterDemoMode = () => {
+        setUser(DEMO_USER);
+        setSession(null);
+        setLoading(false);
+    };
 
     const signIn = (email, password) =>
         supabase.auth.signInWithPassword({ email, password });
@@ -37,10 +57,17 @@ export function AuthProvider({ children }) {
     const signUp = (email, password) =>
         supabase.auth.signUp({ email, password });
 
-    const signOut = () => supabase.auth.signOut();
+    const signOut = () => {
+        if (user?.id === 'demo_user') {
+            setUser(null);
+            setSession(null);
+            return Promise.resolve();
+        }
+        return supabase.auth.signOut();
+    };
 
     return (
-        <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+        <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, enterDemoMode }}>
             {children}
         </AuthContext.Provider>
     );

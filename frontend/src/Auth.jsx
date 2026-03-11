@@ -11,7 +11,7 @@ export default function Auth() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const { signIn, signUp } = useAuth();
+    const { signIn, signUp, enterDemoMode } = useAuth();
     const navigate = useNavigate();
 
     const isDemoMode = !supabase;
@@ -24,6 +24,7 @@ export default function Auth() {
 
         try {
             if (isDemoMode) {
+                enterDemoMode();
                 navigate('/dashboard');
                 return;
             }
@@ -45,7 +46,10 @@ export default function Auth() {
         }
     };
 
-    const handleDemoLogin = () => navigate('/dashboard');
+    const handleDemoLogin = () => {
+        enterDemoMode();
+        navigate('/dashboard');
+    };
 
     return (
         <div className="min-h-screen bg-dark-bg flex items-center justify-center p-4 font-sans">

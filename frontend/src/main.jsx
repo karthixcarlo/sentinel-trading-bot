@@ -25,7 +25,7 @@ function ProtectedRoute({ children }) {
             </div>
         );
     }
-    // Demo mode (no Supabase configured) or authenticated — allow through
+    // Demo mode (no Supabase configured), demo user bypass, or authenticated — allow through
     if (!supabase || user) return children;
     return <Navigate to="/auth" replace />;
 }
