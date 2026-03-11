@@ -1,8 +1,33 @@
-# Root requirements — Railway/Render reads this file.
-# All deps live in backend/requirements.txt; this file includes them.
--r backend/requirements.txt
+# ============================================================
+# Project Sentinel — Production Requirements
+# Flat file read by Railway, Render, and Heroku.
+# Keep in sync with backend/requirements.txt.
+# ============================================================
 
-# Additional root-level modules used by agents and services
+# --- FastAPI + Server ---
+fastapi==0.133.0
+uvicorn==0.41.0
+pydantic==2.12.5
+httpx==0.28.1
+python-dotenv==1.2.1
+PyJWT==2.11.0
+
+# --- Market Data ---
+yfinance==1.2.0
+
+# --- AI / LangGraph ---
+langchain-core==1.2.15
+langchain-google-genai==4.2.1
+langgraph==1.0.9
+langgraph-checkpoint==4.0.0
+langgraph-prebuilt==1.0.8
+google-generativeai==0.8.3
+google-genai==1.64.0
+
+# --- Supabase ---
+supabase==2.28.0
+
+# --- Used by services/ and agents ---
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 pandas>=2.0.0

@@ -296,11 +296,11 @@ sentinel-trading-bot/
 4. Add environment variables: `VITE_API_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 5. Deploy — Vercel runs `npm ci && npm run build` automatically
 
-### Backend → Render
+### Backend → Render (Primary)
 
 1. Create a **Web Service** on [render.com](https://render.com)
-2. Connect the GitHub repo
-3. Set **Build Command**: `pip install -r backend/requirements.txt`
+2. Connect the GitHub repo — `render.yaml` auto-configures the service
+3. Or manually set **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt`
 4. Set **Start Command**: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
 5. Add environment variables: `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET`, `ALLOWED_ORIGINS`
 
