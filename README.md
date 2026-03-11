@@ -240,9 +240,12 @@ sentinel-trading-bot/
 │   │       ├── TradingChart.jsx   # lightweight-charts v5 candlestick
 │   │       └── CopilotSidebar.jsx # AI chat assistant
 │   ├── vite.config.js             # Dev proxy + resolve.conditions
-│   ├── vercel.json                # Forces npm ci on Vercel
+│   ├── vercel.json                # Vercel deployment config
 │   ├── package.json               # Dependencies (supabase@2.39.3 pinned)
 │   └── tailwind.config.js         # Tailwind theme
+├── services/
+│   ├── auth_manager.py            # Supabase auth + portfolio DB operations
+│   └── news_loader.py             # News scraping for AI analyst context
 ├── agents/
 │   ├── supervisor.py              # LangGraph routing agent
 │   ├── scout_agent.py             # Stock discovery (yfinance)
@@ -252,12 +255,16 @@ sentinel-trading-bot/
 ├── agent_service.py               # AgentService singleton (runs LangGraph)
 ├── sentinel_hive.py               # LangGraph StateGraph definition
 ├── sentinel_state.py              # Shared typed state (TypedDict)
+├── langgraph_agents.py            # Shared Gemini LLM instance
 ├── broker_engine.py               # Trade execution engine
+├── database_manager.py            # SQLite thought + trade logging
+├── market_loader.py               # yfinance market data loader
+├── analyst_agent_gemini.py        # Core Gemini AI analyst integration
 ├── supabase_setup.sql             # Idempotent DB schema + RLS + triggers
-├── dev_sync_watcher.py            # Auto git push on file changes
-├── Procfile                       # Render/Heroku deployment
+├── .env.example                   # Environment variable template
+├── Procfile                       # Render deployment entry point
 ├── .github/workflows/ci.yml       # CI: Python compile + Node build
-└── .gitignore                     # node_modules, dist, .env excluded
+└── .gitignore                     # node_modules, dist, .env, *.db excluded
 ```
 
 ---

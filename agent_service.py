@@ -144,6 +144,7 @@ class AgentService:
     CYCLE_SLEEP = 300       # 5 min between cycles
     ERROR_SLEEP = 60        # 1 min after error
     MAX_ERRORS = 5          # pause after this many consecutive errors
+    MAX_STORED_THOUGHTS = 500  # prevent unbounded memory growth
 
     def __init__(self, user_id: str = "demo_user"):
         self.user_id = user_id
@@ -217,6 +218,8 @@ class AgentService:
             workflow_id=self.workflow_id,
         )
         self.current_thoughts.append(thought)
+        if len(self.current_thoughts) > self.MAX_STORED_THOUGHTS:
+            self.current_thoughts = self.current_thoughts[-self.MAX_STORED_THOUGHTS:]
         self._log_agent_thought(thought)
         if self.websocket_callback:
             try:
@@ -256,6 +259,9 @@ class AgentService:
 
     async def start_autonomous_mode(self):
         """Start the autonomous trading loop using the real LangGraph pipeline."""
+        if self.status == AgentStatus.RUNNING:
+            logger.warning("start_autonomous_mode called while already running — ignoring duplicate")
+            return
         self.status = AgentStatus.RUNNING
         self.start_time = datetime.utcnow()
         self.workflow_id = f"auto-{uuid.uuid4().hex[:8]}"

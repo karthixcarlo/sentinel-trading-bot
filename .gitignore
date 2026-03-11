@@ -1,6 +1,6 @@
 # ============================================================
-# Project Sentinel — .gitignore
-# Only track: agents/, dashboard_v3/, core *.py, config files
+# Project Sentinel V2 — .gitignore
+# Stack: React (Vite) + FastAPI + LangGraph + Supabase
 # ============================================================
 
 # --- Node / Frontend ---
@@ -8,10 +8,6 @@ node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
-
-# --- Local dev tools (never push) ---
-dev_sync_watcher.py
-
 
 # --- Python cache ---
 __pycache__/
@@ -49,7 +45,7 @@ wheels/
 .env.local
 .env.*.local
 
-# --- Test / coverage artifacts ---
+# --- Test / coverage ---
 .pytest_cache/
 .coverage
 .coverage.*
@@ -82,7 +78,7 @@ logs/
 temp/
 tmp/
 
-# --- Streamlit ---
+# --- Streamlit (legacy, no longer used) ---
 .streamlit/
 
 # --- Type checkers ---
@@ -96,23 +92,12 @@ dmypy.json
 .agent/
 skills-lock.json
 
-# --- Old/junk files not part of active project ---
-styles.py
-TODO.md
-ALPACA_SETUP.md
-INDIAN_MARKET_SETUP.md
-PROJECT_COMPLETE.md
-PROJECT_DOCUMENTATION.md
-DASHBOARD_GUIDE.md
-QUICKSTART.md
-api_test_result.txt
+# --- Dev utilities (local only) ---
+dev_sync_watcher.py
 
 # --- Jupyter ---
 .ipynb_checkpoints/
 *.ipynb
 
-# --- Mypy ---
-mypy_report/
-
-# --- Render / Supabase local caches ---
+# --- Render local cache ---
 .render/

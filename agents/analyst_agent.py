@@ -21,7 +21,7 @@ from langchain_core.messages import AIMessage
 
 from sentinel_state import SentinelState
 from analyst_agent_gemini import AgenticAnalyst
-from dashboard_v3.news_loader import get_news_summary
+from services.news_loader import get_news_summary
 from database_manager import log_agent_thought
 
 

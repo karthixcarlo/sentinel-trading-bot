@@ -10,11 +10,11 @@ import asyncio
 import json
 import jwt as _jwt
 
-# Add project root to path so we can import dashboard_v3 modules
+# Add project root to path so we can import shared modules
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT_DIR)
 
-from dashboard_v3 import auth_manager as auth
+from services import auth_manager as auth
 
 # Logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -30,8 +30,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _CORS_ORIGINS],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -153,7 +153,7 @@ async def copilot_chat(req: ChatRequest):
         try:
             client = auth.get_client()
             logs = client.table("agent_logs").select("agent_name, message, timestamp") \
-                .or_(f"user_id.eq.{req.user_id},user_id.is.null") \
+                .eq("user_id", req.user_id) \
                 .order("timestamp", desc=True) \
                 .limit(15) \
                 .execute()
@@ -203,8 +203,18 @@ Be concise, analytical, and professional (Groww/Zerodha style). Use markdown for
 
 
 # --- MARKET DATA ENDPOINT ---
+import re
 import yfinance as yf
 from datetime import datetime, timedelta
+
+_VALID_TICKER = re.compile(r'^[A-Z0-9&-]{1,20}(?:\.(?:NS|BO))?$')
+
+def _validate_ticker(ticker: str) -> str:
+    """Validate and sanitize a stock ticker symbol."""
+    t = ticker.upper().strip()
+    if not _VALID_TICKER.match(t):
+        raise HTTPException(status_code=400, detail="Invalid ticker format")
+    return t
 
 @app.get("/api/market/ohlcv/{ticker}")
 async def get_ohlcv(ticker: str, user_id: str | None = None):
@@ -213,6 +223,7 @@ async def get_ohlcv(ticker: str, user_id: str | None = None):
     Trades (BUY/SELL markers) come from Supabase transactions when user_id is provided.
     """
     try:
+        ticker = _validate_ticker(ticker)
         # Ensure NSE suffix for yfinance
         fetch_ticker = ticker if ticker.endswith(".NS") or ticker.endswith(".BO") else f"{ticker}.NS"
         stock = yf.Ticker(fetch_ticker)
@@ -344,8 +355,9 @@ async def get_market_discover():
 async def analyze_stock(ticker: str):
     """Generates an AI deep dive report on a specific equity."""
     try:
+        ticker = _validate_ticker(ticker)
         from langgraph_agents import llm
-        
+
         # Ensure .NS suffix for NSE stocks
         fetch_ticker = ticker + ".NS" if not ticker.endswith(".NS") else ticker
         stock = yf.Ticker(fetch_ticker)
@@ -393,16 +405,19 @@ Keep it highly professional, formatting it beautifully in markdown. Do not hallu
 # --- WEBSOCKET ENDPOINT ---
 from agent_service import get_agent_service
 
-# Store active WebSocket connections
-active_connections = []
+# Store active WebSocket connections (use a set for O(1) removal)
+active_connections: set = set()
 
 async def broadcast_to_websockets(message: dict):
-    """Broadcast message to all connected WebSocket clients"""
-    for connection in active_connections:
+    """Broadcast message to all connected WebSocket clients, pruning dead ones."""
+    dead = []
+    for connection in list(active_connections):
         try:
             await connection.send_json(message)
-        except Exception as e:
-            print(f"Error broadcasting to WebSocket: {e}")
+        except Exception:
+            dead.append(connection)
+    for conn in dead:
+        active_connections.discard(conn)
 
 @app.websocket("/ws/neural-feed")
 async def websocket_neural_feed(websocket: WebSocket):
@@ -411,17 +426,20 @@ async def websocket_neural_feed(websocket: WebSocket):
     directly to the client for the 'God Mode' dashboard.
     """
     await websocket.accept()
-    active_connections.append(websocket)
-    
+    active_connections.add(websocket)
+
     # Set the WebSocket callback on the agent service
     agent_service = get_agent_service()
     original_callback = agent_service.websocket_callback
-    
+
     async def ws_callback(thought: dict):
-        await websocket.send_json(thought)
-    
+        try:
+            await websocket.send_json(thought)
+        except Exception:
+            pass  # connection may have died between heartbeats
+
     agent_service.set_websocket_callback(ws_callback)
-    
+
     try:
         # Send initial connection message
         await websocket.send_json({
@@ -429,11 +447,10 @@ async def websocket_neural_feed(websocket: WebSocket):
             "thought": "Neural feed connected - receiving live agent thoughts",
             "timestamp": datetime.now().isoformat()
         })
-        
+
         # Keep connection alive and send periodic heartbeats
         while True:
             await asyncio.sleep(3)
-            # Send heartbeat
             await websocket.send_json({
                 "agent": "Heartbeat",
                 "thought": "...",
@@ -442,8 +459,7 @@ async def websocket_neural_feed(websocket: WebSocket):
     except Exception as e:
         logger.info(f"WebSocket connection closed: {e}")
     finally:
-        active_connections.remove(websocket)
-        # Restore original callback if still valid
+        active_connections.discard(websocket)
         agent_service.set_websocket_callback(original_callback)
 
 
