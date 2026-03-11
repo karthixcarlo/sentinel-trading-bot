@@ -1,0 +1,8 @@
+# Root requirements — Railway/Render reads this file.
+# All deps live in backend/requirements.txt; this file includes them.
+-r backend/requirements.txt
+
+# Additional root-level modules used by agents and services
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+pandas>=2.0.0
