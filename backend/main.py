@@ -24,11 +24,23 @@ _START_TIME = time.time()
 
 app = FastAPI(title="Project Sentinel API", version="2.0.0")
 
-# CORS — read allowed origins from env, default to local dev
-_CORS_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,https://sentinel-trading-bot.vercel.app").split(",")
+# CORS — read allowed origins from env; fall back to wildcard so fresh
+# Render deploys work before the env var is configured.
+_CORS_RAW = os.environ.get("ALLOWED_ORIGINS", "")
+_CORS_ORIGINS = [o.strip() for o in _CORS_RAW.split(",") if o.strip()] if _CORS_RAW else ["*"]
+
+# Always guarantee these two are present even if ALLOWED_ORIGINS is set
+_REQUIRED_ORIGINS = [
+    "https://sentinel-trading-bot.vercel.app",
+    "http://localhost:5173",
+]
+for origin in _REQUIRED_ORIGINS:
+    if origin not in _CORS_ORIGINS and _CORS_ORIGINS != ["*"]:
+        _CORS_ORIGINS.append(origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in _CORS_ORIGINS],
+    allow_origins=_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
