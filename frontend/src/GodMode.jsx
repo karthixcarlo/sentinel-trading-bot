@@ -94,7 +94,7 @@ export default function GodMode() {
             case 'LEARNING': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
             case 'SYSTEM': return 'text-gray-500 bg-gray-500/10 border-gray-500/20';
             case 'HEARTBEAT': return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
-            default: return 'text-[#9CA3AF] bg-[#0A0A0A] border-[#1E1E1E]';
+            default: return 'text-dark-muted bg-dark-card border-dark-border';
         }
     };
 
@@ -112,19 +112,19 @@ export default function GodMode() {
     };
 
     return (
-        <div className="min-h-screen bg-black font-sans text-white p-6">
+        <div className="min-h-screen bg-dark-bg font-sans text-dark-text p-6">
 
             {/* Header */}
             <header className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white flex items-center">
-                        <Terminal className="mr-3 text-[#9CA3AF]" size={28} /> God Mode Feed
+                    <h1 className="text-3xl font-bold tracking-tight text-dark-text flex items-center">
+                        <Terminal className="mr-3 text-dark-muted" size={28} /> God Mode Feed
                     </h1>
-                    <p className="text-[#9CA3AF] mt-1">Live autonomous agent operations and system state.</p>
+                    <p className="text-dark-muted mt-1">Live autonomous agent operations and system state.</p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-[#9CA3AF]">Status:</span>
+                    <span className="text-sm font-bold text-dark-muted">Status:</span>
                     {isConnected ? (
                         <span className="flex items-center text-sm font-bold text-[#00D09C] bg-[#00D09C]/10 px-3 py-1 rounded-full border border-[#00D09C]/20">
                             <span className="w-2 h-2 rounded-full bg-[#00D09C] mr-2 animate-pulse"></span>
@@ -142,15 +142,15 @@ export default function GodMode() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* Terminal Window (Left 2 columns) */}
-                <div className="lg:col-span-2 bg-black rounded-xl border border-[#1E1E1E] overflow-hidden flex flex-col h-[70vh]">
+                <div className="lg:col-span-2 bg-black rounded-xl border border-dark-border overflow-hidden flex flex-col h-[70vh]">
                     {/* Mac-style window header */}
-                    <div className="bg-[#0A0A0A] px-4 py-3 flex items-center border-b border-[#1E1E1E]">
+                    <div className="bg-dark-card px-4 py-3 flex items-center border-b border-dark-border">
                         <div className="flex gap-2 mr-4">
                             <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
                             <div className="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
                             <div className="w-3 h-3 rounded-full bg-[#27C93F]"></div>
                         </div>
-                        <span className="text-xs font-mono text-[#9CA3AF]">sentinel-hive-daemon</span>
+                        <span className="text-xs font-mono text-dark-muted">sentinel-hive-daemon</span>
                     </div>
 
                     {/* Log Stream */}
@@ -161,7 +161,7 @@ export default function GodMode() {
 
                             return (
                                 <div key={log.id} className="flex items-start animate-fade-in">
-                                    <span className="text-[#9CA3AF] mr-3 shrink-0">[{timeString}]</span>
+                                    <span className="text-dark-muted mr-3 shrink-0">[{timeString}]</span>
                                     <div className="flex-1">
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border mr-2 ${getAgentColor(log.agent)}`}>
                                             {getAgentIcon(log.agent)} {log.agent.toUpperCase()}
@@ -178,11 +178,11 @@ export default function GodMode() {
                 {/* System Controls (Right column) */}
                 <div className="flex flex-col gap-6">
 
-                    <div className="bg-[#0A0A0A] rounded-xl border border-[#1E1E1E] p-6">
-                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-[#1E1E1E] pb-3">
+                    <div className="bg-dark-card rounded-xl border border-dark-border p-6">
+                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-dark-border pb-3">
                             <ShieldAlert size={20} className="mr-2 text-[#EB5B3C]" /> Global Safety
                         </h2>
-                        <p className="text-sm text-[#9CA3AF] mb-4">
+                        <p className="text-sm text-dark-muted mb-4">
                             Instantly halt all autonomous trading operations. Current portfolio will remain untouched.
                         </p>
                         <button className="w-full bg-[#EB5B3C] hover:bg-[#D44A2D] text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center">
@@ -190,22 +190,22 @@ export default function GodMode() {
                         </button>
                     </div>
 
-                    <div className="bg-[#0A0A0A] rounded-xl border border-[#1E1E1E] p-6 flex-1">
-                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-[#1E1E1E] pb-3">
+                    <div className="bg-dark-card rounded-xl border border-dark-border p-6 flex-1">
+                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-dark-border pb-3">
                             <Activity size={20} className="mr-2 text-[#00D09C]" /> Cluster Health
                         </h2>
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-[#9CA3AF]">LangGraph Engine</span>
+                                <span className="text-sm font-bold text-dark-muted">LangGraph Engine</span>
                                 <span className="text-xs font-mono bg-[#00D09C]/10 text-[#00D09C] px-2 py-1 rounded">ONLINE</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-[#9CA3AF]">FastAPI Bridge</span>
+                                <span className="text-sm font-bold text-dark-muted">FastAPI Bridge</span>
                                 <span className="text-xs font-mono bg-[#00D09C]/10 text-[#00D09C] px-2 py-1 rounded">ONLINE</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-[#9CA3AF]">Agent Status</span>
-                                <span className={`text-xs font-mono px-2 py-1 rounded ${agentStatus.status === 'running' ? 'bg-[#00D09C]/10 text-[#00D09C]' : 'bg-[#0A0A0A] text-[#9CA3AF]'}`}>
+                                <span className="text-sm font-bold text-dark-muted">Agent Status</span>
+                                <span className={`text-xs font-mono px-2 py-1 rounded ${agentStatus.status === 'running' ? 'bg-[#00D09C]/10 text-[#00D09C]' : 'bg-dark-card text-dark-muted'}`}>
                                     {agentStatus.status?.toUpperCase() || 'IDLE'}
                                 </span>
                             </div>
@@ -213,27 +213,27 @@ export default function GodMode() {
                     </div>
 
                     {/* Portfolio Summary */}
-                    <div className="bg-[#0A0A0A] rounded-xl border border-[#1E1E1E] p-6">
-                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-[#1E1E1E] pb-3">
+                    <div className="bg-dark-card rounded-xl border border-dark-border p-6">
+                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-dark-border pb-3">
                             <Zap size={20} className="mr-2 text-[#00D09C]" /> AI Portfolio
                         </h2>
                         {agentStatus.portfolio?.total_value ? (
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm text-[#9CA3AF]">Total Value</span>
+                                    <span className="text-sm text-dark-muted">Total Value</span>
                                     <span className="font-bold font-mono">₹{agentStatus.portfolio.total_value?.toLocaleString('en-IN')}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm text-[#9CA3AF]">Cash</span>
+                                    <span className="text-sm text-dark-muted">Cash</span>
                                     <span className="font-mono">₹{agentStatus.portfolio.cash?.toLocaleString('en-IN')}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm text-[#9CA3AF]">Positions</span>
+                                    <span className="text-sm text-dark-muted">Positions</span>
                                     <span className="font-bold">{Object.keys(agentStatus.portfolio.positions || {}).length}</span>
                                 </div>
                                 {agentStatus.performance?.win_rate !== undefined && (
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-[#9CA3AF]">Win Rate</span>
+                                        <span className="text-sm text-dark-muted">Win Rate</span>
                                         <span className={`font-bold ${agentStatus.performance.win_rate > 50 ? 'text-[#00D09C]' : 'text-[#EB5B3C]'}`}>
                                             {agentStatus.performance.win_rate.toFixed(0)}%
                                         </span>
@@ -241,7 +241,7 @@ export default function GodMode() {
                                 )}
                             </div>
                         ) : (
-                            <p className="text-sm text-[#9CA3AF] opacity-60">No portfolio data</p>
+                            <p className="text-sm text-dark-muted opacity-60">No portfolio data</p>
                         )}
                     </div>
 

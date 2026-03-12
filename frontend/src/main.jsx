@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './AuthContext.jsx'
+import { ThemeProvider } from './ThemeContext.jsx'
 import { supabase } from './supabaseClient.js'
 import Layout from './Layout.jsx'
 import Auth from './Auth.jsx'
@@ -20,8 +21,8 @@ function ProtectedRoute({ children }) {
     const { user, loading } = useAuth();
     if (loading) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-[#00D09C]/30 border-t-[#00D09C] rounded-full animate-spin" />
+            <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-accent-green/30 border-t-accent-green rounded-full animate-spin" />
             </div>
         );
     }
@@ -32,6 +33,7 @@ function ProtectedRoute({ children }) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
+        <ThemeProvider>
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
@@ -51,5 +53,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 </Routes>
             </AuthProvider>
         </BrowserRouter>
+        </ThemeProvider>
     </React.StrictMode>,
 )

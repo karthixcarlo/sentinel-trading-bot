@@ -58,7 +58,7 @@ export default function Discover() {
 
                 <div className="flex items-center gap-3">
                     {/* Filter Pills */}
-                    <div className="flex bg-[#0A0A0A] rounded-lg border border-groww-gray/20 p-1">
+                    <div className="flex bg-dark-card rounded-lg border border-groww-gray/20 p-1">
                         {['ALL', 'GAINERS', 'LOSERS'].map(f => (
                             <button
                                 key={f}
@@ -81,14 +81,14 @@ export default function Discover() {
             </div>
 
             {/* Search Bar */}
-            <div className="relative mb-8 max-w-2xl bg-[#0A0A0A] border-2 border-groww-gray/20 rounded-xl overflow-hidden focus-within:border-groww-green transition-colors shadow-sm">
+            <div className="relative mb-8 max-w-2xl bg-dark-card border-2 border-groww-gray/20 rounded-xl overflow-hidden focus-within:border-groww-green transition-colors shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <Search className="text-groww-gray" size={20} />
                 </div>
                 <input
                     type="text"
                     placeholder="Search by company name or symbol (e.g., RELIANCE, TCS)..."
-                    className="w-full pl-12 pr-4 py-4 text-groww-dark font-medium border-none focus:outline-none focus:ring-0"
+                    className="w-full pl-12 pr-4 py-4 bg-transparent text-groww-dark font-medium border-none focus:outline-none focus:ring-0"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -101,7 +101,7 @@ export default function Discover() {
                     return (
                         <div
                             key={stock.symbol}
-                            className="bg-[#0A0A0A] p-6 rounded-xl border border-groww-gray/20 shadow-sm hover:shadow-md hover:border-groww-green transition-all cursor-pointer group"
+                            className="bg-dark-card p-6 rounded-xl border border-groww-gray/20 shadow-sm hover:shadow-md hover:border-groww-green transition-all cursor-pointer group"
                             // Navigate to the dynamic analyzer routing page
                             onClick={() => navigate(`/analyze/${stock.symbol}`)}
                         >
@@ -128,7 +128,7 @@ export default function Discover() {
             </div>
 
             {filteredData.length === 0 && (
-                <div className="bg-[#0A0A0A] rounded-xl border border-groww-gray/20 p-12 text-center shadow-sm">
+                <div className="bg-dark-card rounded-xl border border-groww-gray/20 p-12 text-center shadow-sm">
                     <Filter className="mx-auto h-12 w-12 text-groww-gray mb-4 opacity-50" />
                     <h3 className="text-lg font-bold text-groww-dark">No stocks found</h3>
                     <p className="text-groww-gray mt-2">Try adjusting your search terms or filters.</p>

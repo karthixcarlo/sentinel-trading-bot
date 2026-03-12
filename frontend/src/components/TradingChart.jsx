@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, HistogramSeries, createSeriesMarkers } from 'lightweight-charts';
 import { Activity } from 'lucide-react';
 import { BASE_URL } from '../api';
+import { useTheme } from '../ThemeContext';
 
 export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact = false }) {
+    const { isDark } = useTheme();
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const [loading, setLoading] = useState(true);
@@ -32,24 +34,29 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
 
                 if (!ohlc || ohlc.length === 0) throw new Error('No data');
 
+                const bgColor = isDark ? '#0A0A0A' : '#F9FAFB';
+                const textColor = isDark ? '#9CA3AF' : '#4B5563';
+                const gridColor = isDark ? '#1E1E1E' : '#E5E7EB';
+                const borderColor = isDark ? '#1E1E1E' : '#E5E7EB';
+
                 const chart = createChart(chartContainerRef.current, {
                     layout: {
-                        background: { type: 'solid', color: '#0A0A0A' },
-                        textColor: '#9CA3AF',
+                        background: { type: 'solid', color: bgColor },
+                        textColor,
                         fontSize: compact ? 10 : 12,
                     },
                     grid: {
-                        vertLines: { color: '#1E1E1E20' },
-                        horzLines: { color: '#1E1E1E40' },
+                        vertLines: { color: gridColor + '20' },
+                        horzLines: { color: gridColor + '40' },
                     },
                     width: chartContainerRef.current.clientWidth,
                     height: chartContainerRef.current.clientHeight,
                     rightPriceScale: {
-                        borderColor: '#1E1E1E',
+                        borderColor,
                         visible: !compact,
                     },
                     timeScale: {
-                        borderColor: '#1E1E1E',
+                        borderColor,
                         timeVisible: !compact,
                         secondsVisible: false,
                         visible: !compact,
@@ -119,7 +126,7 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
                 chartRef.current = null;
             }
         };
-    }, [symbol, userId, compact]);
+    }, [symbol, userId, compact, isDark]);
 
     const chartHeight = compact ? '100%' : '400px';
 

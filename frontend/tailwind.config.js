@@ -7,27 +7,27 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Pure Black OLED palette (Groww-style)
-                'dark-bg':     '#000000',
-                'dark-card':   '#0A0A0A',
-                'dark-hover':  '#111111',
-                'dark-border': '#1E1E1E',
-                'dark-text':   '#FFFFFF',
-                'dark-muted':  '#9CA3AF',
+                // Theme-aware palette (driven by CSS variables)
+                'dark-bg':     'rgb(var(--color-bg) / <alpha-value>)',
+                'dark-card':   'rgb(var(--color-card) / <alpha-value>)',
+                'dark-hover':  'rgb(var(--color-hover) / <alpha-value>)',
+                'dark-border': 'rgb(var(--color-border) / <alpha-value>)',
+                'dark-text':   'rgb(var(--color-text) / <alpha-value>)',
+                'dark-muted':  'rgb(var(--color-muted) / <alpha-value>)',
 
-                // Accent colors
+                // Accent colors (same in both themes)
                 'accent-green': '#00D09C',
                 'accent-red':   '#EB5B3C',
                 'accent-blue':  '#3B82F6',
                 'accent-amber': '#F59E0B',
                 'accent-purple':'#8B5CF6',
 
-                // Legacy aliases (backwards compat during migration)
+                // Legacy aliases (now theme-aware)
                 'groww-green':      '#00D09C',
                 'groww-red':        '#EB5B3C',
-                'groww-dark':       '#FFFFFF',
-                'groww-gray':       '#9CA3AF',
-                'groww-light-gray': '#0A0A0A',
+                'groww-dark':       'rgb(var(--color-text) / <alpha-value>)',
+                'groww-gray':       'rgb(var(--color-muted) / <alpha-value>)',
+                'groww-light-gray': 'rgb(var(--color-card) / <alpha-value>)',
                 'brand-green':      '#00D09C',
                 'brand-red':        '#EB5B3C',
             },

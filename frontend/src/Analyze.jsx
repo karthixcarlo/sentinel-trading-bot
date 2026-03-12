@@ -35,7 +35,7 @@ export default function Analyze() {
                 <button onClick={() => navigate(-1)} className="mb-6 flex items-center text-groww-gray hover:text-groww-dark font-bold transition-colors">
                     <ArrowLeft size={20} className="mr-2" /> Back to Discover
                 </button>
-                <div className="max-w-4xl mx-auto bg-[#0A0A0A] rounded-2xl border border-groww-gray/20 p-8 shadow-sm">
+                <div className="max-w-4xl mx-auto bg-dark-card rounded-2xl border border-groww-gray/20 p-8 shadow-sm">
                     <div className="flex flex-col items-center justify-center py-32">
                         <Activity className="animate-spin text-groww-green mb-6" size={48} />
                         <h2 className="text-xl font-bold text-groww-dark">Agentic Deep Dive in Progress</h2>
@@ -71,7 +71,7 @@ export default function Analyze() {
                     <ArrowLeft size={20} className="mr-2" /> Back to Discover
                 </button>
 
-                <div className="bg-[#0A0A0A] rounded-2xl border border-groww-gray/20 overflow-hidden shadow-sm">
+                <div className="bg-dark-card rounded-2xl border border-groww-gray/20 overflow-hidden shadow-sm">
 
                     {/* Header Banner */}
                     <div className="p-8 border-b border-groww-gray/10 bg-gradient-to-r from-black to-groww-light-gray/40">
@@ -86,7 +86,7 @@ export default function Analyze() {
                                 <p className="text-lg text-groww-gray">{analysis.name}</p>
                             </div>
 
-                            <div className="text-left md:text-right bg-[#0A0A0A] md:bg-transparent p-4 md:p-0 rounded-xl border md:border-none border-groww-gray/10 shadow-sm md:shadow-none">
+                            <div className="text-left md:text-right bg-dark-card md:bg-transparent p-4 md:p-0 rounded-xl border md:border-none border-groww-gray/10 shadow-sm md:shadow-none">
                                 <p className="text-sm font-bold text-groww-gray mb-1 uppercase tracking-wider">Current Price</p>
                                 <p className="text-3xl font-mono font-bold text-groww-dark">₹{analysis.current_price.toLocaleString()}</p>
                             </div>
@@ -94,7 +94,7 @@ export default function Analyze() {
 
                         {/* Fast Metadata Pills */}
                         <div className="mt-8 flex flex-wrap gap-4">
-                            <div className="flex items-center text-sm font-bold text-groww-dark bg-[#0A0A0A] border border-groww-gray/10 shadow-sm px-4 py-2.5 rounded-lg">
+                            <div className="flex items-center text-sm font-bold text-groww-dark bg-dark-card border border-groww-gray/10 shadow-sm px-4 py-2.5 rounded-lg">
                                 <LineChart size={18} className="text-groww-gray mr-2.5" />
                                 20-Day SMA: <span className="font-mono ml-2 text-groww-green">₹{analysis.sma_20.toLocaleString()}</span>
                             </div>

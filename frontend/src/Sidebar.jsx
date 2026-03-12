@@ -2,9 +2,10 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, BarChart2, Compass, Briefcase, Zap,
-    Terminal, Bot, Settings as SettingsIcon, Cpu, LogOut, Command
+    Terminal, Bot, Settings as SettingsIcon, Cpu, LogOut, Command, Sun, Moon
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { useTheme } from './ThemeContext';
 
 const NAV_ITEMS = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ onCommandPalette }) {
     const { user, signOut } = useAuth();
+    const { isDark, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const displayEmail = user?.email || 'demo@sentinel.ai';
     const displayName = user ? displayEmail.split('@')[0] : 'Demo User';
@@ -30,7 +32,7 @@ export default function Sidebar({ onCommandPalette }) {
     };
 
     return (
-        <div className="w-64 bg-black border-r border-dark-border h-screen fixed top-0 left-0 hidden md:flex flex-col z-40">
+        <div className="w-64 bg-dark-bg border-r border-dark-border h-screen fixed top-0 left-0 hidden md:flex flex-col z-40">
             {/* Logo */}
             <div className="p-6 border-b border-dark-border">
                 <h1 className="text-2xl font-bold text-dark-text flex items-center">
@@ -39,8 +41,19 @@ export default function Sidebar({ onCommandPalette }) {
                 <p className="text-xs text-dark-muted mt-1 font-mono">v3.0</p>
             </div>
 
-            {/* Quick Search Trigger */}
-            <div className="px-4 pt-4">
+            {/* Theme Toggle + Quick Search */}
+            <div className="px-4 pt-4 flex items-center gap-2">
+                <button
+                    onClick={toggleTheme}
+                    title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                    className="p-2 rounded-lg border border-dark-border text-dark-muted
+                        hover:border-accent-green/30 hover:text-accent-green transition-all duration-200"
+                >
+                    {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                </button>
+            </div>
+
+            <div className="px-4 pt-2">
                 <button
                     onClick={onCommandPalette}
                     className="w-full flex items-center px-3 py-2 rounded-lg border border-dark-border text-dark-muted text-xs
