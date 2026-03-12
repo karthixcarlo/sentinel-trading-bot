@@ -34,22 +34,22 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
 
                 const chart = createChart(chartContainerRef.current, {
                     layout: {
-                        background: { type: 'solid', color: '#131722' },
-                        textColor: '#6B7280',
+                        background: { type: 'solid', color: '#0A0A0A' },
+                        textColor: '#9CA3AF',
                         fontSize: compact ? 10 : 12,
                     },
                     grid: {
-                        vertLines: { color: '#1E263620' },
-                        horzLines: { color: '#1E263640' },
+                        vertLines: { color: '#1E1E1E20' },
+                        horzLines: { color: '#1E1E1E40' },
                     },
                     width: chartContainerRef.current.clientWidth,
                     height: chartContainerRef.current.clientHeight,
                     rightPriceScale: {
-                        borderColor: '#1E2636',
+                        borderColor: '#1E1E1E',
                         visible: !compact,
                     },
                     timeScale: {
-                        borderColor: '#1E2636',
+                        borderColor: '#1E1E1E',
                         timeVisible: !compact,
                         secondsVisible: false,
                         visible: !compact,

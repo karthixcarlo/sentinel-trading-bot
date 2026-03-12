@@ -77,7 +77,7 @@ export default function Settings() {
                 <p className="text-groww-gray mt-1">Configure trading constraints and boundary limits for the LangGraph Daemon.</p>
             </header>
 
-            <div className="bg-white rounded-xl border border-groww-gray/20 overflow-hidden shadow-sm mb-6">
+            <div className="bg-[#0A0A0A] rounded-xl border border-groww-gray/20 overflow-hidden shadow-sm mb-6">
 
                 <div className="p-6 border-b border-groww-gray/10">
                     <h2 className="text-lg font-bold">Trading Constraints</h2>
@@ -96,7 +96,7 @@ export default function Settings() {
                                     onClick={() => setFormData({ ...formData, risk_appetite: level })}
                                     className={`py-3 px-4 rounded-lg font-bold border transition-all ${formData.risk_appetite === level
                                             ? 'bg-groww-green/10 border-groww-green text-groww-green'
-                                            : 'bg-white border-groww-gray/20 text-groww-gray hover:border-groww-gray/50'
+                                            : 'bg-[#0A0A0A] border-groww-gray/20 text-groww-gray hover:border-groww-gray/50'
                                         }`}
                                 >
                                     {level}
@@ -137,7 +137,7 @@ export default function Settings() {
                                         onClick={() => handleSectorToggle(sector)}
                                         className={`flex items-center px-4 py-2 rounded-full text-sm font-bold border transition-all ${isSelected
                                                 ? 'bg-groww-dark text-white border-groww-dark'
-                                                : 'bg-white text-groww-gray border-groww-gray/20 hover:border-groww-gray/50'
+                                                : 'bg-[#0A0A0A] text-groww-gray border-groww-gray/20 hover:border-groww-gray/50'
                                             }`}
                                     >
                                         {isSelected && <Check size={14} className="mr-1" />} {sector}

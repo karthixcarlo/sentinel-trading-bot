@@ -3,7 +3,7 @@ import { Activity, Terminal, ShieldAlert, Cpu, Database, CheckCircle2, Zap, BarC
 import { BASE_URL, WS_BASE } from './api';
 
 const AGENT_COLORS = {
-    Supervisor: '#8B5CF6', Scout: '#3B82F6', Analyst: '#00D09C', 
+    Supervisor: '#8B5CF6', Scout: '#3B82F6', Analyst: '#00D09C',
     Risk: '#F59E0B', Trader: '#EC4899', Monitor: '#14B8A6',
     Learning: '#F97316', System: '#6B7280', Heartbeat: '#9CA3AF', default: '#6B7280'
 };
@@ -30,14 +30,14 @@ export default function GodMode() {
             .then(r => r.json())
             .then(d => setAgentStatus(d))
             .catch(() => {});
-        
+
         const interval = setInterval(() => {
             fetch(`${BASE_URL}/api/agent/status`)
                 .then(r => r.json())
                 .then(d => setAgentStatus(d))
                 .catch(() => {});
         }, 5000);
-        
+
         return () => clearInterval(interval);
     }, []);
 
@@ -94,7 +94,7 @@ export default function GodMode() {
             case 'LEARNING': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
             case 'SYSTEM': return 'text-gray-500 bg-gray-500/10 border-gray-500/20';
             case 'HEARTBEAT': return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
-            default: return 'text-gray-600 bg-gray-100 border-gray-200';
+            default: return 'text-[#9CA3AF] bg-[#0A0A0A] border-[#1E1E1E]';
         }
     };
 
@@ -112,27 +112,27 @@ export default function GodMode() {
     };
 
     return (
-        <div className="min-h-screen bg-groww-light-gray font-sans text-groww-dark p-6">
+        <div className="min-h-screen bg-black font-sans text-white p-6">
 
             {/* Header */}
             <header className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-groww-dark flex items-center">
-                        <Terminal className="mr-3 text-groww-gray" size={28} /> God Mode Feed
+                    <h1 className="text-3xl font-bold tracking-tight text-white flex items-center">
+                        <Terminal className="mr-3 text-[#9CA3AF]" size={28} /> God Mode Feed
                     </h1>
-                    <p className="text-groww-gray mt-1">Live autonomous agent operations and system state.</p>
+                    <p className="text-[#9CA3AF] mt-1">Live autonomous agent operations and system state.</p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-groww-gray">Status:</span>
+                    <span className="text-sm font-bold text-[#9CA3AF]">Status:</span>
                     {isConnected ? (
-                        <span className="flex items-center text-sm font-bold text-groww-green bg-groww-green/10 px-3 py-1 rounded-full border border-groww-green/20">
-                            <span className="w-2 h-2 rounded-full bg-groww-green mr-2 animate-pulse"></span>
+                        <span className="flex items-center text-sm font-bold text-[#00D09C] bg-[#00D09C]/10 px-3 py-1 rounded-full border border-[#00D09C]/20">
+                            <span className="w-2 h-2 rounded-full bg-[#00D09C] mr-2 animate-pulse"></span>
                             Live Feed Active
                         </span>
                     ) : (
-                        <span className="flex items-center text-sm font-bold text-groww-red bg-groww-red/10 px-3 py-1 rounded-full border border-groww-red/20">
-                            <span className="w-2 h-2 rounded-full bg-groww-red mr-2"></span>
+                        <span className="flex items-center text-sm font-bold text-[#EB5B3C] bg-[#EB5B3C]/10 px-3 py-1 rounded-full border border-[#EB5B3C]/20">
+                            <span className="w-2 h-2 rounded-full bg-[#EB5B3C] mr-2"></span>
                             Disconnected
                         </span>
                     )}
@@ -142,15 +142,15 @@ export default function GodMode() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* Terminal Window (Left 2 columns) */}
-                <div className="lg:col-span-2 bg-[#1E1E1E] rounded-xl border border-groww-gray/30 overflow-hidden shadow-xl flex flex-col h-[70vh]">
+                <div className="lg:col-span-2 bg-black rounded-xl border border-[#1E1E1E] overflow-hidden flex flex-col h-[70vh]">
                     {/* Mac-style window header */}
-                    <div className="bg-[#2D2D2D] px-4 py-3 flex items-center border-b border-black/20">
+                    <div className="bg-[#0A0A0A] px-4 py-3 flex items-center border-b border-[#1E1E1E]">
                         <div className="flex gap-2 mr-4">
                             <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
                             <div className="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
                             <div className="w-3 h-3 rounded-full bg-[#27C93F]"></div>
                         </div>
-                        <span className="text-xs font-mono text-gray-400">sentinel-hive-daemon</span>
+                        <span className="text-xs font-mono text-[#9CA3AF]">sentinel-hive-daemon</span>
                     </div>
 
                     {/* Log Stream */}
@@ -161,12 +161,12 @@ export default function GodMode() {
 
                             return (
                                 <div key={log.id} className="flex items-start animate-fade-in">
-                                    <span className="text-gray-500 mr-3 shrink-0">[{timeString}]</span>
+                                    <span className="text-[#9CA3AF] mr-3 shrink-0">[{timeString}]</span>
                                     <div className="flex-1">
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border mr-2 ${getAgentColor(log.agent)}`}>
                                             {getAgentIcon(log.agent)} {log.agent.toUpperCase()}
                                         </span>
-                                        <span className="text-gray-300 leading-relaxed">{log.thought}</span>
+                                        <span className="text-white/70 leading-relaxed">{log.thought}</span>
                                     </div>
                                 </div>
                             );
@@ -178,34 +178,34 @@ export default function GodMode() {
                 {/* System Controls (Right column) */}
                 <div className="flex flex-col gap-6">
 
-                    <div className="bg-white rounded-xl border border-groww-gray/20 p-6 shadow-sm">
-                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-groww-gray/10 pb-3">
-                            <ShieldAlert size={20} className="mr-2 text-groww-red" /> Global Safety
+                    <div className="bg-[#0A0A0A] rounded-xl border border-[#1E1E1E] p-6">
+                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-[#1E1E1E] pb-3">
+                            <ShieldAlert size={20} className="mr-2 text-[#EB5B3C]" /> Global Safety
                         </h2>
-                        <p className="text-sm text-groww-gray mb-4">
+                        <p className="text-sm text-[#9CA3AF] mb-4">
                             Instantly halt all autonomous trading operations. Current portfolio will remain untouched.
                         </p>
-                        <button className="w-full bg-groww-red hover:bg-[#D44A2D] text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center shadow-md">
+                        <button className="w-full bg-[#EB5B3C] hover:bg-[#D44A2D] text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center">
                             EMERGENCY STOP
                         </button>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-groww-gray/20 p-6 shadow-sm flex-1">
-                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-groww-gray/10 pb-3">
-                            <Activity size={20} className="mr-2 text-groww-green" /> Cluster Health
+                    <div className="bg-[#0A0A0A] rounded-xl border border-[#1E1E1E] p-6 flex-1">
+                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-[#1E1E1E] pb-3">
+                            <Activity size={20} className="mr-2 text-[#00D09C]" /> Cluster Health
                         </h2>
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-groww-gray">LangGraph Engine</span>
-                                <span className="text-xs font-mono bg-groww-green/10 text-groww-green px-2 py-1 rounded">ONLINE</span>
+                                <span className="text-sm font-bold text-[#9CA3AF]">LangGraph Engine</span>
+                                <span className="text-xs font-mono bg-[#00D09C]/10 text-[#00D09C] px-2 py-1 rounded">ONLINE</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-groww-gray">FastAPI Bridge</span>
-                                <span className="text-xs font-mono bg-groww-green/10 text-groww-green px-2 py-1 rounded">ONLINE</span>
+                                <span className="text-sm font-bold text-[#9CA3AF]">FastAPI Bridge</span>
+                                <span className="text-xs font-mono bg-[#00D09C]/10 text-[#00D09C] px-2 py-1 rounded">ONLINE</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-groww-gray">Agent Status</span>
-                                <span className={`text-xs font-mono px-2 py-1 rounded ${agentStatus.status === 'running' ? 'bg-groww-green/10 text-groww-green' : 'bg-groww-light-gray text-groww-gray'}`}>
+                                <span className="text-sm font-bold text-[#9CA3AF]">Agent Status</span>
+                                <span className={`text-xs font-mono px-2 py-1 rounded ${agentStatus.status === 'running' ? 'bg-[#00D09C]/10 text-[#00D09C]' : 'bg-[#0A0A0A] text-[#9CA3AF]'}`}>
                                     {agentStatus.status?.toUpperCase() || 'IDLE'}
                                 </span>
                             </div>
@@ -213,35 +213,35 @@ export default function GodMode() {
                     </div>
 
                     {/* Portfolio Summary */}
-                    <div className="bg-white rounded-xl border border-groww-gray/20 p-6 shadow-sm">
-                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-groww-gray/10 pb-3">
-                            <Zap size={20} className="mr-2 text-groww-green" /> AI Portfolio
+                    <div className="bg-[#0A0A0A] rounded-xl border border-[#1E1E1E] p-6">
+                        <h2 className="text-lg font-bold mb-4 flex items-center border-b border-[#1E1E1E] pb-3">
+                            <Zap size={20} className="mr-2 text-[#00D09C]" /> AI Portfolio
                         </h2>
                         {agentStatus.portfolio?.total_value ? (
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm text-groww-gray">Total Value</span>
+                                    <span className="text-sm text-[#9CA3AF]">Total Value</span>
                                     <span className="font-bold font-mono">₹{agentStatus.portfolio.total_value?.toLocaleString('en-IN')}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm text-groww-gray">Cash</span>
+                                    <span className="text-sm text-[#9CA3AF]">Cash</span>
                                     <span className="font-mono">₹{agentStatus.portfolio.cash?.toLocaleString('en-IN')}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm text-groww-gray">Positions</span>
+                                    <span className="text-sm text-[#9CA3AF]">Positions</span>
                                     <span className="font-bold">{Object.keys(agentStatus.portfolio.positions || {}).length}</span>
                                 </div>
                                 {agentStatus.performance?.win_rate !== undefined && (
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-groww-gray">Win Rate</span>
-                                        <span className={`font-bold ${agentStatus.performance.win_rate > 50 ? 'text-groww-green' : 'text-groww-red'}`}>
+                                        <span className="text-sm text-[#9CA3AF]">Win Rate</span>
+                                        <span className={`font-bold ${agentStatus.performance.win_rate > 50 ? 'text-[#00D09C]' : 'text-[#EB5B3C]'}`}>
                                             {agentStatus.performance.win_rate.toFixed(0)}%
                                         </span>
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <p className="text-sm text-groww-gray opacity-60">No portfolio data</p>
+                            <p className="text-sm text-[#9CA3AF] opacity-60">No portfolio data</p>
                         )}
                     </div>
 

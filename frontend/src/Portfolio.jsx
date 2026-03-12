@@ -10,10 +10,10 @@ const DEMO = {
 
 function MetricCard({ label, value, delta, deltaPositive, color }) {
     return (
-        <div className={`bg-white rounded-2xl border border-black/5 p-6 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300`}>
-            <div className={`absolute top-0 right-0 w-28 h-28 rounded-bl-[100px] -mr-6 -mt-6 transition-transform group-hover:scale-110 ${color || 'bg-black/3'}`}></div>
-            <p className="text-sm font-medium text-[#444444] mb-2 relative z-10">{label}</p>
-            <p className="text-2xl font-bold font-mono text-[#111111] tracking-tight relative z-10">{value}</p>
+        <div className={`bg-[#0A0A0A] rounded-2xl border border-[#1E1E1E] p-6 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300`}>
+            <div className={`absolute top-0 right-0 w-28 h-28 rounded-bl-[100px] -mr-6 -mt-6 transition-transform group-hover:scale-110 ${color || 'bg-[#111111]'}`}></div>
+            <p className="text-sm font-medium text-[#9CA3AF] mb-2 relative z-10">{label}</p>
+            <p className="text-2xl font-bold font-mono text-white tracking-tight relative z-10">{value}</p>
             {delta !== undefined && (
                 <p className={`text-sm font-bold mt-2 relative z-10 ${deltaPositive ? 'text-[#00D09C]' : 'text-[#EB5B3C]'}`}>
                     {deltaPositive ? '▲' : '▼'} {delta}
@@ -46,7 +46,7 @@ export default function Portfolio() {
     const isProfit = d.total_returns >= 0;
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] p-6 lg:p-10 font-sans text-[#111111]">
+        <div className="min-h-screen bg-black p-6 lg:p-10 font-sans text-white">
             <div className="max-w-7xl mx-auto space-y-8">
 
                 {/* Header */}
@@ -55,11 +55,11 @@ export default function Portfolio() {
                         <h1 className="text-3xl md:text-4xl font-bold tracking-tight flex items-center">
                             <Briefcase size={30} className="mr-3 text-[#00D09C]" /> Portfolio
                         </h1>
-                        <p className="text-[#444444] mt-1 text-sm">Your holdings, P&L, and cash balance</p>
+                        <p className="text-[#9CA3AF] mt-1 text-sm">Your holdings, P&L, and cash balance</p>
                     </div>
                     <div className="flex gap-3">
                         <button onClick={fetchPortfolio}
-                            className="flex items-center px-4 py-2 bg-white border border-black/5 rounded-lg text-sm font-bold text-[#444444] shadow-sm hover:bg-[#F8F9FA] transition-colors">
+                            className="flex items-center px-4 py-2 bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg text-sm font-bold text-[#9CA3AF] shadow-sm hover:bg-[#111111] transition-colors">
                             <RefreshCw size={15} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
                         </button>
                         <button onClick={() => navigate('/trade')}
@@ -78,14 +78,14 @@ export default function Portfolio() {
                 {/* Summary Metrics */}
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-pulse">
-                        {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-white rounded-2xl border border-black/5" />)}
+                        {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-[#0A0A0A] rounded-2xl border border-[#1E1E1E]" />)}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <MetricCard label="Portfolio Value" value={`₹${d.portfolio_value.toLocaleString('en-IN')}`}
                             delta={`${d.returns_pct >= 0 ? '+' : ''}${d.returns_pct}%`} deltaPositive={isProfit} color="bg-[#00D09C]/5" />
-                        <MetricCard label="Available Cash" value={`₹${d.cash.toLocaleString('en-IN')}`} color="bg-[#444444]/5" />
-                        <MetricCard label="Holdings Value" value={`₹${d.total_holdings_value.toLocaleString('en-IN')}`} color="bg-[#444444]/5" />
+                        <MetricCard label="Available Cash" value={`₹${d.cash.toLocaleString('en-IN')}`} color="bg-[#1E1E1E]" />
+                        <MetricCard label="Holdings Value" value={`₹${d.total_holdings_value.toLocaleString('en-IN')}`} color="bg-[#1E1E1E]" />
                         <MetricCard label="Total Returns"
                             value={`₹${Math.abs(d.total_returns).toLocaleString('en-IN')}`}
                             delta={`${d.returns_pct >= 0 ? '+' : ''}${d.returns_pct}%`}
@@ -95,16 +95,16 @@ export default function Portfolio() {
                 )}
 
                 {/* Holdings Table */}
-                <div className="bg-white rounded-2xl border border-black/5 overflow-hidden shadow-sm">
-                    <div className="p-6 border-b border-black/5">
-                        <h2 className="text-lg font-bold text-[#111111]">Holdings</h2>
+                <div className="bg-[#0A0A0A] rounded-2xl border border-[#1E1E1E] overflow-hidden shadow-sm">
+                    <div className="p-6 border-b border-[#1E1E1E]">
+                        <h2 className="text-lg font-bold text-white">Holdings</h2>
                     </div>
                     {loading ? (
                         <div className="p-6 animate-pulse space-y-3">
-                            {[1, 2, 3].map(i => <div key={i} className="h-14 bg-black/5 rounded-lg" />)}
+                            {[1, 2, 3].map(i => <div key={i} className="h-14 bg-[#1E1E1E] rounded-lg" />)}
                         </div>
                     ) : d.positions.length === 0 ? (
-                        <div className="py-24 text-center text-[#444444]">
+                        <div className="py-24 text-center text-[#9CA3AF]">
                             <Briefcase size={40} className="mx-auto mb-4 opacity-30" />
                             <p className="font-bold text-lg">No positions yet</p>
                             <p className="text-sm mt-1 mb-6">Place your first trade to get started.</p>
@@ -116,7 +116,7 @@ export default function Portfolio() {
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
-                                <thead className="bg-[#F8F9FA] text-[#444444] text-xs uppercase tracking-wider">
+                                <thead className="bg-[#0A0A0A] text-[#9CA3AF] text-xs uppercase tracking-wider">
                                     <tr>
                                         <th className="px-6 py-4 font-bold">Stock</th>
                                         <th className="px-6 py-4 font-bold text-right">Qty</th>
@@ -127,21 +127,21 @@ export default function Portfolio() {
                                         <th className="px-6 py-4 font-bold text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-black/5">
+                                <tbody className="divide-y divide-[#1E1E1E]">
                                     {d.positions.map(pos => {
                                         const pnlPositive = pos.pnl >= 0;
                                         return (
-                                            <tr key={pos.symbol} className="hover:bg-[#F8F9FA] transition-colors group">
+                                            <tr key={pos.symbol} className="hover:bg-[#0A0A0A] transition-colors group">
                                                 <td className="px-6 py-5">
                                                     <div className="flex items-center">
-                                                        <div className="w-8 h-8 rounded-full bg-[#111111]/5 flex items-center justify-center mr-3 text-xs font-bold group-hover:bg-[#00D09C]/10 group-hover:text-[#00D09C] transition-colors">
+                                                        <div className="w-8 h-8 rounded-full bg-[#1E1E1E] flex items-center justify-center mr-3 text-xs font-bold group-hover:bg-[#00D09C]/10 group-hover:text-[#00D09C] transition-colors">
                                                             {pos.symbol.charAt(0)}
                                                         </div>
                                                         <span className="font-bold">{pos.symbol}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-5 text-right font-mono text-[#444444]">{pos.quantity}</td>
-                                                <td className="px-6 py-5 text-right font-mono text-[#444444]">₹{pos.average_price.toLocaleString('en-IN')}</td>
+                                                <td className="px-6 py-5 text-right font-mono text-[#9CA3AF]">{pos.quantity}</td>
+                                                <td className="px-6 py-5 text-right font-mono text-[#9CA3AF]">₹{pos.average_price.toLocaleString('en-IN')}</td>
                                                 <td className="px-6 py-5 text-right font-mono font-bold">₹{pos.current_price.toLocaleString('en-IN')}</td>
                                                 <td className="px-6 py-5 text-right font-mono font-bold">₹{pos.position_value.toLocaleString('en-IN')}</td>
                                                 <td className="px-6 py-5 text-right">

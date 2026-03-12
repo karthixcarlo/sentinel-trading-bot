@@ -30,7 +30,7 @@ export default function Sidebar({ onCommandPalette }) {
     };
 
     return (
-        <div className="w-64 bg-dark-card border-r border-dark-border h-screen fixed top-0 left-0 hidden md:flex flex-col z-40">
+        <div className="w-64 bg-black border-r border-dark-border h-screen fixed top-0 left-0 hidden md:flex flex-col z-40">
             {/* Logo */}
             <div className="p-6 border-b border-dark-border">
                 <h1 className="text-2xl font-bold text-dark-text flex items-center">

@@ -105,7 +105,7 @@ export default function TradeExecutor() {
                             { label: 'Portfolio Value', value: `₹${portfolio.portfolio_value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` },
                             { label: 'Positions', value: portfolio.positions.length },
                         ].map(m => (
-                            <div key={m.label} className="bg-white rounded-xl border border-groww-gray/10 p-4 shadow-sm text-center">
+                            <div key={m.label} className="bg-[#0A0A0A] rounded-xl border border-groww-gray/10 p-4 shadow-sm text-center">
                                 <p className="text-xs text-groww-gray font-medium mb-1">{m.label}</p>
                                 <p className="text-lg font-bold font-mono text-groww-dark">{m.value}</p>
                             </div>
@@ -124,7 +124,7 @@ export default function TradeExecutor() {
                 )}
 
                 {/* Trade Form */}
-                <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-groww-gray/10 shadow-sm p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="bg-[#0A0A0A] rounded-2xl border border-groww-gray/10 shadow-sm p-8 space-y-6">
 
                     {/* BUY / SELL Toggle */}
                     <div>
@@ -173,7 +173,7 @@ export default function TradeExecutor() {
                             <label className="block text-xs font-bold text-groww-gray uppercase tracking-wider mb-3">Order Type</label>
                             <div className="relative">
                                 <select value={orderType} onChange={e => setOrderType(e.target.value)}
-                                    className="w-full px-4 py-3.5 border border-groww-gray/20 rounded-xl font-bold text-groww-dark appearance-none focus:outline-none focus:border-groww-green focus:ring-2 focus:ring-groww-green/20 transition-all bg-white">
+                                    className="w-full px-4 py-3.5 border border-groww-gray/20 rounded-xl font-bold text-groww-dark appearance-none focus:outline-none focus:border-groww-green focus:ring-2 focus:ring-groww-green/20 transition-all bg-[#0A0A0A]">
                                     <option value="MARKET">Market Order</option>
                                     <option value="LIMIT">Limit Order</option>
                                 </select>

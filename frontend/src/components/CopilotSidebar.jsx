@@ -103,7 +103,7 @@ export default function CopilotSidebar() {
 
             {/* Slide-out Drawer */}
             <div
-                className={`fixed top-0 right-0 h-full w-full md:w-[450px] bg-white shadow-2xl z-50 flex flex-col border-l border-groww-gray/10 transform transition-transform duration-300 ease-in-out ${
+                className={`fixed top-0 right-0 h-full w-full md:w-[450px] bg-black shadow-2xl z-50 flex flex-col border-l border-groww-gray/10 transform transition-transform duration-300 ease-in-out ${
                     isOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
             >
@@ -146,7 +146,7 @@ export default function CopilotSidebar() {
                                     className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
                                         msg.role === 'user'
                                             ? 'bg-groww-green text-white rounded-tr-none'
-                                            : 'bg-[#F0F2F6] text-groww-dark rounded-tl-none border border-groww-gray/5'
+                                            : 'bg-[#0A0A0A] text-groww-dark rounded-tl-none border border-groww-gray/5'
                                     }`}
                                 >
                                     {msg.role === 'agent' ? (
@@ -173,7 +173,7 @@ export default function CopilotSidebar() {
                                     <button
                                         key={prompt}
                                         onClick={() => sendMessage(prompt)}
-                                        className="px-3 py-1.5 bg-white border border-groww-green/40 text-groww-green text-xs rounded-full hover:bg-groww-green hover:text-white transition-all font-medium shadow-sm"
+                                        className="px-3 py-1.5 bg-black border border-groww-green/40 text-groww-green text-xs rounded-full hover:bg-groww-green hover:text-white transition-all font-medium shadow-sm"
                                     >
                                         {prompt}
                                     </button>
@@ -189,7 +189,7 @@ export default function CopilotSidebar() {
                                 <div className="w-8 h-8 rounded-full bg-groww-green text-white flex items-center justify-center shrink-0 mt-1">
                                     <Bot size={16} />
                                 </div>
-                                <div className="p-4 rounded-2xl rounded-tl-none bg-[#F0F2F6] flex items-center gap-1.5 h-12">
+                                <div className="p-4 rounded-2xl rounded-tl-none bg-[#0A0A0A] flex items-center gap-1.5 h-12">
                                     <span className="w-2 h-2 bg-groww-gray/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                                     <span className="w-2 h-2 bg-groww-gray/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                                     <span className="w-2 h-2 bg-groww-gray/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -202,7 +202,7 @@ export default function CopilotSidebar() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-groww-gray/10 bg-white shrink-0">
+                <div className="p-4 border-t border-groww-gray/10 bg-black shrink-0">
                     <div className="relative flex items-center">
                         <input
                             type="text"
@@ -210,7 +210,7 @@ export default function CopilotSidebar() {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                             placeholder="Ask Sentinel about recent trades..."
-                            className="w-full pl-4 pr-12 py-3 bg-groww-light-gray/50 border border-groww-gray/20 rounded-xl focus:outline-none focus:border-groww-green focus:bg-white transition-colors text-groww-dark placeholder-groww-gray text-sm"
+                            className="w-full pl-4 pr-12 py-3 bg-groww-light-gray/50 border border-groww-gray/20 rounded-xl focus:outline-none focus:border-groww-green focus:bg-black transition-colors text-groww-dark placeholder-groww-gray text-sm"
                         />
                         <button
                             onClick={() => sendMessage()}

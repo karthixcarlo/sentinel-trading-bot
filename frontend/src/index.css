@@ -5,17 +5,17 @@
 body {
   margin: 0;
   font-family: 'DM Sans', sans-serif;
-  background-color: #0B0F19;
-  color: #E1E5EA;
+  background-color: #000000;
+  color: #FFFFFF;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom scrollbar — dark theme */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0B0F19; }
-::-webkit-scrollbar-thumb { background: #1E2636; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #2A3442; }
+::-webkit-scrollbar-track { background: #000000; }
+::-webkit-scrollbar-thumb { background: #1E1E1E; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2A2A2A; }
 
 /* Terminal typewriter cursor for Reasoning Engine */
 @keyframes blink {

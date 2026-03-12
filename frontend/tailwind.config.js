@@ -7,13 +7,13 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Dark-first palette (Groww / TradingView inspired)
-                'dark-bg':     '#0B0F19',
-                'dark-card':   '#131722',
-                'dark-hover':  '#1E2230',
-                'dark-border': '#1E2636',
-                'dark-text':   '#E1E5EA',
-                'dark-muted':  '#6B7280',
+                // Pure Black OLED palette (Groww-style)
+                'dark-bg':     '#000000',
+                'dark-card':   '#0A0A0A',
+                'dark-hover':  '#111111',
+                'dark-border': '#1E1E1E',
+                'dark-text':   '#FFFFFF',
+                'dark-muted':  '#9CA3AF',
 
                 // Accent colors
                 'accent-green': '#00D09C',
@@ -25,9 +25,9 @@ export default {
                 // Legacy aliases (backwards compat during migration)
                 'groww-green':      '#00D09C',
                 'groww-red':        '#EB5B3C',
-                'groww-dark':       '#E1E5EA',
-                'groww-gray':       '#6B7280',
-                'groww-light-gray': '#1E2230',
+                'groww-dark':       '#FFFFFF',
+                'groww-gray':       '#9CA3AF',
+                'groww-light-gray': '#0A0A0A',
                 'brand-green':      '#00D09C',
                 'brand-red':        '#EB5B3C',
             },

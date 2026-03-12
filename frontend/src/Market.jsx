@@ -11,10 +11,10 @@ const DEMO_INDICES = [
 function IndexCard({ index }) {
     const isUp = index.change >= 0;
     return (
-        <div className="bg-white rounded-2xl border border-black/5 p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
+        <div className="bg-[#0A0A0A] rounded-2xl border border-[#1E1E1E] p-6 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
             <div className={`absolute top-0 right-0 w-32 h-32 rounded-bl-[100px] -mr-8 -mt-8 transition-transform group-hover:scale-110 ${isUp ? 'bg-[#00D09C]/5' : 'bg-[#EB5B3C]/5'}`}></div>
-            <p className="text-sm font-medium text-[#444444] mb-1 relative z-10">{index.name}</p>
-            <p className="text-3xl font-bold font-mono text-[#111111] tracking-tight relative z-10">
+            <p className="text-sm font-medium text-[#9CA3AF] mb-1 relative z-10">{index.name}</p>
+            <p className="text-3xl font-bold font-mono text-white tracking-tight relative z-10">
                 {index.value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
             <div className={`mt-3 flex items-center text-sm font-bold relative z-10 w-max px-2 py-1 rounded-md ${isUp ? 'text-[#00D09C] bg-[#00D09C]/10' : 'text-[#EB5B3C] bg-[#EB5B3C]/10'}`}>
@@ -54,23 +54,23 @@ export default function Market() {
     ).slice(0, 8);
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] p-6 lg:p-10 font-sans text-[#111111]">
+        <div className="min-h-screen bg-black p-6 lg:p-10 font-sans text-white">
             <div className="max-w-7xl mx-auto space-y-8">
 
                 {/* Header */}
                 <header className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#111111] flex items-center">
+                        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white flex items-center">
                             <BarChart2 size={32} className="mr-3 text-[#00D09C]" /> Market Overview
                         </h1>
-                        <p className="text-[#444444] mt-1 text-sm">
+                        <p className="text-[#9CA3AF] mt-1 text-sm">
                             Live NSE/BSE indices and top movers
                             {lastUpdated && <span className="ml-2 text-[#00D09C] font-mono">• {lastUpdated}</span>}
                         </p>
                     </div>
                     <button
                         onClick={fetchData}
-                        className="flex items-center px-4 py-2 bg-white border border-black/5 rounded-lg text-sm font-bold text-[#444444] hover:bg-[#F8F9FA] shadow-sm transition-colors"
+                        className="flex items-center px-4 py-2 bg-[#0A0A0A] border border-[#1E1E1E] rounded-lg text-sm font-bold text-[#9CA3AF] hover:bg-[#0A0A0A] shadow-sm transition-colors"
                     >
                         <RefreshCw size={15} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
                         {loading ? 'Refreshing...' : 'Refresh'}
@@ -83,15 +83,15 @@ export default function Market() {
                 </div>
 
                 {/* Top Movers */}
-                <div className="bg-white rounded-2xl border border-black/5 overflow-hidden shadow-sm">
-                    <div className="p-6 border-b border-black/5 flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-[#111111] flex items-center">
-                            <TrendingUp size={20} className="mr-2 text-[#444444]" /> Top Movers
+                <div className="bg-[#0A0A0A] rounded-2xl border border-[#1E1E1E] overflow-hidden shadow-sm">
+                    <div className="p-6 border-b border-[#1E1E1E] flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-white flex items-center">
+                            <TrendingUp size={20} className="mr-2 text-[#9CA3AF]" /> Top Movers
                         </h2>
-                        <div className="flex bg-[#F8F9FA] rounded-lg border border-black/5 p-1">
+                        <div className="flex bg-[#0A0A0A] rounded-lg border border-[#1E1E1E] p-1">
                             {['GAINERS', 'LOSERS'].map(t => (
                                 <button key={t} onClick={() => setTab(t)}
-                                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-colors ${tab === t ? 'bg-[#111111] text-white' : 'text-[#444444] hover:bg-white'}`}>
+                                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-colors ${tab === t ? 'bg-[#111111] text-white' : 'text-[#9CA3AF] hover:bg-[#111111]'}`}>
                                     {t}
                                 </button>
                             ))}
@@ -100,27 +100,27 @@ export default function Market() {
 
                     {loading ? (
                         <div className="p-6 animate-pulse space-y-4">
-                            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-10 bg-black/5 rounded-lg" />)}
+                            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-10 bg-[#1E1E1E] rounded-lg" />)}
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-[#F8F9FA] text-[#444444] text-xs uppercase tracking-wider">
+                            <thead className="bg-[#0A0A0A] text-[#9CA3AF] text-xs uppercase tracking-wider">
                                 <tr>
                                     <th className="px-6 py-4 font-bold">Stock</th>
                                     <th className="px-6 py-4 font-bold text-right">LTP</th>
                                     <th className="px-6 py-4 font-bold text-right">Change</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-black/5">
+                            <tbody className="divide-y divide-[#1E1E1E]">
                                 {filtered.map(stock => {
                                     const isUp = stock.change >= 0;
                                     return (
-                                        <tr key={stock.symbol} className="hover:bg-[#F8F9FA] transition-colors">
+                                        <tr key={stock.symbol} className="hover:bg-[#0A0A0A] transition-colors">
                                             <td className="px-6 py-4">
-                                                <p className="font-bold text-[#111111]">{stock.symbol}</p>
-                                                <p className="text-xs text-[#444444]">{stock.name}</p>
+                                                <p className="font-bold text-white">{stock.symbol}</p>
+                                                <p className="text-xs text-[#9CA3AF]">{stock.name}</p>
                                             </td>
-                                            <td className="px-6 py-4 text-right font-mono font-bold text-[#111111]">
+                                            <td className="px-6 py-4 text-right font-mono font-bold text-white">
                                                 ₹{stock.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </td>
                                             <td className="px-6 py-4 text-right">
