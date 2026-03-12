@@ -263,7 +263,10 @@ sentinel-trading-bot/
 ├── supabase_setup.sql             # Idempotent DB schema + RLS + triggers
 ├── .env.example                   # Environment variable template
 ├── Procfile                       # Render deployment entry point
-├── .github/workflows/ci.yml       # CI: Python compile + Node build
+├── .github/workflows/
+│   ├── ci.yml                     # Legacy CI (compile + build)
+│   ├── backend-ci.yml             # Backend CI: Ruff lint + compile + pytest
+│   └── frontend-ci.yml            # Frontend CI: ESLint + Vite build
 └── .gitignore                     # node_modules, dist, .env, *.db excluded
 ```
 
@@ -321,6 +324,46 @@ The Risk Manager agent uses configurable confidence thresholds set from the Sett
 | **Conservative** | 85% | Only high-conviction trades pass through |
 | **Moderate** | 70% | Balanced risk/reward (default) |
 | **Aggressive** | 55% | More trades, higher risk tolerance |
+
+---
+
+## DevOps & CI/CD
+
+### GitHub Actions Pipelines
+
+Sentinel uses two dedicated CI pipelines that run automatically on every push and pull request to `main`:
+
+| Workflow | File | Trigger Paths | Jobs |
+|----------|------|---------------|------|
+| **Backend CI** | `.github/workflows/backend-ci.yml` | `backend/`, `agents/`, `services/`, `*.py` | Ruff lint, compile check, pytest |
+| **Frontend CI** | `.github/workflows/frontend-ci.yml` | `frontend/` | ESLint, Vite build |
+
+**Backend CI** runs three jobs:
+1. **Lint (Ruff)** — Fast Python linter checking for syntax errors, undefined names, and unused imports.
+2. **Compile Check** — Verifies all Python files compile without syntax errors with full dependencies installed.
+3. **Tests (pytest)** — Runs the `tests/` suite covering state management, agent configuration, portfolio logic, and broker input validation.
+
+**Frontend CI** runs two jobs:
+1. **Lint (ESLint)** — Catches React errors, hook violations, and unused variables.
+2. **Build (Vite)** — Ensures the production build compiles without errors.
+
+### Branch Protection Rules
+
+To prevent broken code from reaching production, configure **GitHub Branch Protection** on `main`:
+
+1. Go to **Settings → Branches → Add branch protection rule**
+2. Set **Branch name pattern** to `main`
+3. Enable **Require status checks to pass before merging**
+4. Search and add these required checks:
+   - `Lint (Ruff)`
+   - `Compile Check`
+   - `Tests (pytest)`
+   - `Lint (ESLint)`
+   - `Build (Vite)`
+5. Enable **Require branches to be up to date before merging**
+6. Optionally enable **Require a pull request before merging** with at least 1 approval
+
+This ensures every PR must pass all CI checks before it can be merged to `main`. Vercel and Render deploy automatically from `main`, so these gates protect production.
 
 ---
 
