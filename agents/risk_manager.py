@@ -15,7 +15,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from langchain_core.messages import AIMessage
 
 from sentinel_state import SentinelState
@@ -112,9 +112,9 @@ def risk_node(state: SentinelState) -> SentinelState:
         state['messages'].append(
             AIMessage(content=f"🛡️ Risk: REJECTED - Confidence too low ({confidence:.0%} < {min_confidence:.0%} [{risk_appetite}])")
         )
-        print(f"❌ Risk: Rejected - Low confidence")
+        print("❌ Risk: Rejected - Low confidence")
         return state
-    
+
     # 3. Check portfolio cash
     cash = portfolio.get('cash', 100000)
     
@@ -135,7 +135,7 @@ def risk_node(state: SentinelState) -> SentinelState:
         state['messages'].append(
             AIMessage(content=f"🛡️ Risk: REJECTED - Daily loss limit reached (₹{abs(daily_pnl):,.0f} lost today)")
         )
-        print(f"❌ Risk: Rejected - Daily loss limit")
+        print("❌ Risk: Rejected - Daily loss limit")
         return state
     
     # 6. All checks passed - APPROVE

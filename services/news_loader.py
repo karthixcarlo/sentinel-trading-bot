@@ -246,7 +246,7 @@ if __name__ == "__main__":
         print(f"   Published: {item['published_at']}")
         print(f"   Sentiment: {get_sentiment_indicator(item['title'])}")
     
-    print(f"\n\n💡 Summary for AI:")
+    print("\n\n💡 Summary for AI:")
     print(f"{loader.get_news_summary(ticker)}")
     
     print("\n" + "=" * 60)

@@ -16,8 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import yfinance as yf
 import pandas as pd
-from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 from langchain_core.messages import HumanMessage
 
 from sentinel_state import SentinelState
@@ -194,7 +193,7 @@ def scout_node(state: SentinelState) -> SentinelState:
     
     _bc = state.get('broadcast_callback')
 
-    print(f"\n🕵️  Scout Agent: Scanning market using Rolling Batch strategy...\n")
+    print("\n🕵️  Scout Agent: Scanning market using Rolling Batch strategy...\n")
     if _bc:
         _bc("Scout", "🔍 Scanning market using Rolling Batch strategy...")
 
@@ -305,7 +304,7 @@ def scout_node(state: SentinelState) -> SentinelState:
                 state.get('iteration_count', 0),
                 state.get('workflow_id')
             )
-        except:
+        except Exception:
             pass
         
         print(f"\n✅ Scout: Selected {best_ticker} ({best_momentum:+.2f}%)")

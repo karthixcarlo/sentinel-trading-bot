@@ -24,7 +24,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     _supabase_client = None
 else:
     try:
-        from supabase import create_client, Client
+        from supabase import create_client
         _supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
     except Exception as e:
         _supabase_client = None

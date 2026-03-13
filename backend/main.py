@@ -568,7 +568,6 @@ async def get_agent_trades(limit: int = 50):
 # --- SETTINGS ENDPOINT ---
 
 from typing import List, Optional
-from datetime import date
 import json as _json
 
 class UserSettings(BaseModel):
@@ -739,7 +738,7 @@ async def get_market_indices():
                     result.append({"name": item["name"], "value": round(current, 2), "change": round(change_pct, 2)})
                 else:
                     result.append(item)
-            except:
+            except Exception:
                 result.append(item)
         return result
     except Exception as e:

@@ -16,13 +16,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import yfinance as yf
 import pandas as pd
-from datetime import datetime
 from langchain_core.messages import AIMessage
 
 from sentinel_state import SentinelState
 from analyst_agent_gemini import AgenticAnalyst
 from services.news_loader import get_news_summary
-from database_manager import log_agent_thought
 
 
 def calculate_technical_indicators(ticker: str) -> dict:
@@ -145,7 +143,7 @@ def analyst_node(state: SentinelState) -> SentinelState:
         # 2. Get news
         try:
             news_summary = get_news_summary(ticker.replace('.NS', ''))
-        except:
+        except Exception:
             news_summary = "No recent news available"
         
         # 3. Call Gemini AI
@@ -220,7 +218,7 @@ if __name__ == "__main__":
     # Run analyst
     result = analyst_node(state)
     
-    print(f"\n📊 Result:")
+    print("\n📊 Result:")
     print(f"   Signal: {result['analyst_signal'].get('signal')}")
     print(f"   Confidence: {result['analyst_signal'].get('confidence'):.0%}")
     print(f"   Reasoning: {result['analyst_signal'].get('reasoning')}")

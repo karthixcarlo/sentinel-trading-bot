@@ -20,7 +20,6 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import yfinance as yf
-from datetime import datetime
 from langchain_core.messages import AIMessage
 
 from sentinel_state import SentinelState
@@ -124,7 +123,7 @@ def trader_node(state: SentinelState) -> SentinelState:
             state["trade_status"] = "FAILED"
             state["errors"].append(f"Trader: Position size calculated as 0 for {ticker}")
             state["messages"].append(
-                AIMessage(content=f"Trader: FAILED — calculated position size is 0.")
+                AIMessage(content="Trader: FAILED — calculated position size is 0.")
             )
             return state
 
