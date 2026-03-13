@@ -123,7 +123,7 @@ def filter_junk_stocks(data_dict: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataF
             # Passed filters
             filtered[ticker] = df
             
-        except Exception as e:
+        except Exception:
             junk_count += 1
             continue
     

@@ -15,7 +15,6 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from datetime import datetime
 from langchain_core.messages import AIMessage
 
 from sentinel_state import SentinelState
@@ -44,7 +43,6 @@ def calculate_daily_pnl(portfolio: dict) -> float:
     Returns:
         float: Today's P&L (negative for losses)
     """
-    today = datetime.now().date()
     daily_pnl = 0.0
     
     for order in portfolio.get('orders', []):

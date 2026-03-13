@@ -15,7 +15,6 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import yfinance as yf
-import pandas as pd
 from langchain_core.messages import AIMessage
 
 from sentinel_state import SentinelState

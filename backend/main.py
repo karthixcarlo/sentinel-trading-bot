@@ -7,7 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import asyncio
-import json
 import jwt as _jwt
 
 # Add project root to path so we can import shared modules
@@ -171,8 +170,8 @@ async def copilot_chat(req: ChatRequest):
                 .execute()
             if logs.data:
                 context_str = "\n".join([
-                    f"[{l.get('timestamp', 'N/A')}] {l['agent_name']}: {l['message']}"
-                    for l in logs.data
+                    f"[{entry.get('timestamp', 'N/A')}] {entry['agent_name']}: {entry['message']}"
+                    for entry in logs.data
                 ])
         except Exception as supabase_err:
             logger.info(f"Copilot: Supabase unavailable, falling back to SQLite — {supabase_err}")
@@ -592,7 +591,8 @@ def _ensure_settings_table():
         max_position_size INTEGER DEFAULT 10,
         allowed_sectors TEXT DEFAULT '[]'
     )""")
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
 
 def _load_settings(user_id: str) -> dict:
     _ensure_settings_table()
@@ -617,7 +617,8 @@ def _save_settings(user_id: str, s: dict):
         "INSERT OR REPLACE INTO agent_settings (user_id, risk_appetite, max_position_size, allowed_sectors) VALUES (?,?,?,?)",
         (user_id, s["risk_appetite"], s["max_position_size"], _json.dumps(s["allowed_sectors"]))
     )
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
 
 @app.get("/api/settings/{user_id}")
 async def get_settings(user_id: str):
@@ -648,7 +649,8 @@ def _ensure_watchlist_table():
         created_at TEXT DEFAULT (datetime('now')),
         UNIQUE(user_id, ticker)
     )""")
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
 
 class WatchlistAddRequest(BaseModel):
     ticker: str
@@ -690,7 +692,8 @@ async def add_to_watchlist(req: WatchlistAddRequest, current_user: str = Depends
     try:
         conn = _wl_sqlite.connect(os.path.join(ROOT_DIR, "sentinel.db"))
         conn.execute("INSERT OR IGNORE INTO watchlists (user_id, ticker) VALUES (?,?)", (current_user, ticker))
-        conn.commit(); conn.close()
+        conn.commit()
+        conn.close()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"status": "success", "ticker": ticker}
@@ -711,7 +714,8 @@ async def remove_from_watchlist(ticker: str, current_user: str = Depends(get_cur
     _ensure_watchlist_table()
     conn = _wl_sqlite.connect(os.path.join(ROOT_DIR, "sentinel.db"))
     conn.execute("DELETE FROM watchlists WHERE user_id=? AND ticker=?", (current_user, ticker))
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
     return {"status": "success", "ticker": ticker}
 
 
@@ -844,7 +848,8 @@ def _demo_ensure_tables():
     conn.execute("""CREATE TABLE IF NOT EXISTS demo_transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, ticker TEXT,
         qty REAL, price REAL, side TEXT, timestamp TEXT)""")
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
 
 def _demo_get_cash(user_id: str) -> float:
     _demo_ensure_tables()
@@ -855,7 +860,8 @@ def _demo_get_cash(user_id: str) -> float:
         return float(row[0])
     conn = _sqlite3.connect(_DEMO_DB)
     conn.execute("INSERT OR IGNORE INTO demo_portfolios (user_id, cash_balance) VALUES (?,?)", (user_id, 100000.0))
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
     return 100000.0
 
 def _demo_get_positions(user_id: str) -> list:
@@ -885,13 +891,15 @@ def _demo_log_tx(user_id, ticker, qty, price, side):
         "INSERT INTO demo_transactions (user_id,ticker,qty,price,side,timestamp) VALUES (?,?,?,?,?,?)",
         (user_id, ticker, qty, price, side, datetime.now(timezone.utc).isoformat())
     )
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
 
 def _demo_update_cash(user_id, new_balance):
     _demo_ensure_tables()
     conn = _sqlite3.connect(_DEMO_DB)
     conn.execute("INSERT OR REPLACE INTO demo_portfolios (user_id,cash_balance) VALUES (?,?)", (user_id, new_balance))
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
 
 
 class TradeExecuteRequest(BaseModel):

@@ -26,7 +26,7 @@ else:
     try:
         from supabase import create_client
         _supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    except Exception as e:
+    except Exception:
         _supabase_client = None
 
 
