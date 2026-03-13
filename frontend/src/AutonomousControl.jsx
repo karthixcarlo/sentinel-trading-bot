@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Bot, Play, Square, Activity, Clock, BarChart2, Zap, AlertCircle } from 'lucide-react';
-import { BASE_URL, WS_BASE, getAuthToken } from './api';
+import { BASE_URL } from './api';
+import useNeuralFeed from './hooks/useNeuralFeed';
+import useAgentStatus from './hooks/useAgentStatus';
 
 const AGENT_COLORS = {
     Supervisor: '#00D09C', Analyst: '#3B82F6', RiskManager: '#F59E0B',
@@ -18,87 +20,13 @@ function AgentBadge({ name }) {
 }
 
 export default function AutonomousControl() {
-    // null = still loading from server (prevents false "stopped" flash on mount)
-    const [status, setStatus] = useState({ status: 'idle', running: null, start_time: null, portfolio: {}, performance: {}, recent_thoughts: [] });
-    const [trades, setTrades] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { status, trades, loading, refetch } = useAgentStatus({ pollInterval: 30000, fetchTrades: true });
+    const { messages: wsMessages } = useNeuralFeed({ maxMessages: 50 });
     const [toggling, setToggling] = useState(false);
-    const [wsMessages, setWsMessages] = useState([]);
-    const wsRef = useRef(null);
     const feedRef = useRef(null);
-
-    // Lightweight poll — syncs running state from server without the full payload
-    const fetchAutonomousStatus = () => {
-        fetch(`${BASE_URL}/api/autonomous/status`)
-            .then(r => r.json())
-            .then(d => setStatus(prev => ({ ...prev, running: d.running, status: d.status, start_time: d.start_time, workflow_id: d.workflow_id })))
-            .catch(() => {});
-    };
-
-    // Full status fetch — used on mount and after toggle
-    const fetchStatus = () => {
-        fetch(`${BASE_URL}/api/agent/status`)
-            .then(r => r.json())
-            .then(d => {
-                setStatus(d);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
-    };
-
-    const fetchTrades = () => {
-        fetch(`${BASE_URL}/api/agent/trades`)
-            .then(r => r.json())
-            .then(d => setTrades(d.trades || []))
-            .catch(() => {});
-    };
 
     // null while loading — avoids rendering "stopped" before the server responds
     const isRunning = status.running === true;
-
-    useEffect(() => {
-        // Full fetch on mount to get portfolio + thoughts
-        fetchStatus();
-        fetchTrades();
-
-        // Lightweight 30-second heartbeat keeps the toggle accurate
-        // even after tab hibernation or page navigation
-        const interval = setInterval(() => {
-            fetchAutonomousStatus();
-            fetchTrades();
-        }, 30000);
-        return () => clearInterval(interval);
-    }, []);
-
-    // WebSocket for live neural feed (with auth token + proper cleanup)
-    useEffect(() => {
-        let reconnectTimer = null;
-        let unmounted = false;
-        const connect = () => {
-            const token = getAuthToken();
-            const url = token ? `${WS_BASE}/ws/neural-feed?token=${token}` : `${WS_BASE}/ws/neural-feed`;
-            const ws = new WebSocket(url);
-            wsRef.current = ws;
-            ws.onopen = () => console.log('Neural Feed WebSocket connected');
-            ws.onmessage = (evt) => {
-                try {
-                    const msg = JSON.parse(evt.data);
-                    setWsMessages(prev => [msg, ...prev].slice(0, 50));
-                    setTimeout(() => feedRef.current?.scrollTo({ top: 0, behavior: 'smooth' }), 50);
-                } catch { }
-            };
-            ws.onerror = () => { };
-            ws.onclose = () => {
-                if (!unmounted) reconnectTimer = setTimeout(connect, 3000);
-            };
-        };
-        connect();
-        return () => {
-            unmounted = true;
-            clearTimeout(reconnectTimer);
-            wsRef.current?.close();
-        };
-    }, []);
 
     const toggleAgent = async () => {
         setToggling(true);
@@ -107,12 +35,8 @@ export default function AutonomousControl() {
                 ? `${BASE_URL}/api/agent/stop`
                 : `${BASE_URL}/api/agent/start`;
             const res = await fetch(endpoint, { method: 'POST' });
-            if (res.ok) {
-                // Optimistic update so the toggle flips instantly
-                setStatus(prev => ({ ...prev, running: !isRunning, status: !isRunning ? 'running' : 'stopped' }));
-            }
             // Confirm with the actual server state
-            fetchStatus();
+            refetch();
         } catch { }
         setToggling(false);
     };

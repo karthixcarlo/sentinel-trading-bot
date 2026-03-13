@@ -81,8 +81,12 @@ All agents share a typed **LangGraph StateGraph** (`sentinel_state.py`) and rout
 - **Supabase Auth** — Email/password signup with JWT sessions
 - **Demo Mode** — Full access without signup when Supabase is not configured
 - **Protected Routes** — React `ProtectedRoute` wrapper with auth redirect
-- **Backend JWT Verification** — PyJWT validates Supabase tokens; graceful demo fallback
+- **Backend JWT Verification** — PyJWT validates Supabase tokens on all mutating endpoints; graceful demo fallback
+- **WebSocket Auth** — Optional `?token=` query param verified server-side
+- **CORS Lockdown** — Explicit origin allowlist (no wildcard + credentials violation)
+- **Auth-aware API Client** — Centralized `api.js` attaches Bearer tokens automatically
 - **Row Level Security** — PostgreSQL RLS policies on all user data
+- **Error Boundaries** — React class-component error boundaries on every route prevent full-app crashes
 
 ### Autonomous System
 - **Server-Side State** — Running status persists across page navigation and tab hibernation
@@ -191,18 +195,34 @@ Open **http://localhost:5173** — The Vite dev server proxies `/api` and `/ws` 
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/market-data/{symbol}` | OHLCV candlestick data via yfinance |
-| `GET` | `/api/analyze/{symbol}` | AI analysis for a stock |
+| `GET` | `/api/market/ohlcv/{ticker}` | OHLCV candlestick data via yfinance |
+| `GET` | `/api/market/discover` | Discovery grid with live NSE prices |
+| `GET` | `/api/market/analyze/{ticker}` | AI-powered stock analysis (Gemini) |
+| `GET` | `/api/market/indices` | Nifty 50, Bank Nifty, Sensex |
+
+### Trading (JWT-protected)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/trade/manual` | Trigger manual trade execution |
+| `POST` | `/api/trade/execute` | Execute BUY/SELL with live pricing |
 
 ### User Data (JWT-protected)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/portfolio/{user_id}` | User portfolio |
-| `GET/POST` | `/api/settings/{user_id}` | User settings (risk appetite, sectors) |
+| `GET` | `/api/portfolio/{user_id}/detail` | Portfolio with per-position P&L |
+| `GET/PUT` | `/api/settings/{user_id}` | User settings (risk appetite, sectors) |
 | `GET` | `/api/watchlist` | User watchlist |
 | `POST` | `/api/watchlist` | Add ticker to watchlist |
 | `DELETE` | `/api/watchlist/{ticker}` | Remove ticker from watchlist |
+
+### Chat
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/chat/copilot` | AI trading copilot (Gemini + agent logs) |
 
 ### WebSocket
 
@@ -217,32 +237,49 @@ Open **http://localhost:5173** — The Vite dev server proxies `/api` and `/ws` 
 ```
 sentinel-trading-bot/
 ├── backend/
-│   ├── main.py                    # FastAPI app — all REST + WebSocket endpoints
+│   ├── main.py                    # Thin FastAPI aggregator (~80 lines) — CORS, health, router registration
+│   ├── deps.py                    # Shared dependencies: JWT auth, ticker validation, resolve_user_id
+│   ├── routers/
+│   │   ├── auth.py                # POST /api/auth/login
+│   │   ├── chat.py                # POST /api/chat/copilot (Gemini + agent logs)
+│   │   ├── market.py              # OHLCV, discover, analyze, indices
+│   │   ├── portfolio.py           # Portfolio + per-position P&L detail
+│   │   ├── trade.py               # Trade execution + demo SQLite helpers
+│   │   ├── agent.py               # Agent start/stop/status/portfolio/thoughts/trades
+│   │   ├── settings.py            # User settings CRUD (risk appetite, sectors)
+│   │   ├── watchlist.py           # Watchlist CRUD (Supabase + SQLite fallback)
+│   │   └── ws.py                  # WebSocket /ws/neural-feed + autonomous status
 │   └── requirements.txt           # Python dependencies
 ├── frontend/
 │   ├── src/
-│   │   ├── api.js                 # BASE_URL + WS_BASE (env-driven)
-│   │   ├── main.jsx               # Routes + ProtectedRoute
+│   │   ├── api.js                 # BASE_URL, WS_BASE, auth-aware fetch client
+│   │   ├── main.jsx               # Routes + ProtectedRoute + ErrorBoundary wrappers
 │   │   ├── Auth.jsx               # Login / signup page
-│   │   ├── AuthContext.jsx        # Supabase auth provider + useAuth hook
+│   │   ├── AuthContext.jsx         # Supabase auth provider + useAuth hook
+│   │   ├── ThemeContext.jsx        # Light/dark mode theme provider
 │   │   ├── supabaseClient.js      # Supabase client (null in demo mode)
-│   │   ├── Sidebar.jsx            # Navigation + user profile
+│   │   ├── Layout.jsx             # Sidebar + Outlet layout wrapper
 │   │   ├── Dashboard.jsx          # Portfolio overview
 │   │   ├── AutonomousControl.jsx  # Agent start/stop + server-synced state
-│   │   ├── GodMode.jsx            # WebSocket neural feed
+│   │   ├── GodMode.jsx            # Real-time neural feed terminal
 │   │   ├── Portfolio.jsx          # Holdings + P&L
 │   │   ├── Settings.jsx           # User preferences
 │   │   ├── TradeExecutor.jsx      # Manual trade entry
 │   │   ├── Analyze.jsx            # AI analysis view
 │   │   ├── Market.jsx             # Market overview
 │   │   ├── Discover.jsx           # Sector browsing
+│   │   ├── hooks/
+│   │   │   ├── useNeuralFeed.js   # Shared WebSocket hook (replaces 3× copy-paste)
+│   │   │   └── useAgentStatus.js  # Shared agent status polling hook
 │   │   └── components/
 │   │       ├── TradingChart.jsx   # lightweight-charts v5 candlestick
+│   │       ├── ReasoningEngine.jsx # Slide-out AI reasoning panel
+│   │       ├── ErrorBoundary.jsx  # React error boundary with retry UI
 │   │       └── CopilotSidebar.jsx # AI chat assistant
 │   ├── vite.config.js             # Dev proxy + resolve.conditions
 │   ├── vercel.json                # Vercel deployment config
-│   ├── package.json               # Dependencies (supabase@2.39.3 pinned)
-│   └── tailwind.config.js         # Tailwind theme
+│   ├── package.json               # Dependencies
+│   └── tailwind.config.js         # Tailwind theme (dark + light palettes)
 ├── services/
 │   ├── auth_manager.py            # Supabase auth + portfolio DB operations
 │   └── news_loader.py             # News scraping for AI analyst context

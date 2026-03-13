@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Activity, Terminal, ShieldAlert, Cpu, Database, CheckCircle2, Zap, BarChart2 } from 'lucide-react';
-import { BASE_URL, WS_BASE, getAuthToken } from './api';
+import useNeuralFeed from './hooks/useNeuralFeed';
+import useAgentStatus from './hooks/useAgentStatus';
 
 const AGENT_COLORS = {
     Supervisor: '#8B5CF6', Scout: '#3B82F6', Analyst: '#00D09C',
@@ -19,67 +20,9 @@ function AgentBadge({ name }) {
 }
 
 export default function GodMode() {
-    const [logs, setLogs] = useState([]);
-    const [isConnected, setIsConnected] = useState(false);
-    const [agentStatus, setAgentStatus] = useState({});
+    const { messages: logs, connected: isConnected } = useNeuralFeed({ maxMessages: 50, filterHeartbeats: false });
+    const { status: agentStatus } = useAgentStatus({ pollInterval: 5000 });
     const bottomRef = useRef(null);
-
-    // Fetch agent status
-    useEffect(() => {
-        fetch(`${BASE_URL}/api/agent/status`)
-            .then(r => r.json())
-            .then(d => setAgentStatus(d))
-            .catch(() => {});
-
-        const interval = setInterval(() => {
-            fetch(`${BASE_URL}/api/agent/status`)
-                .then(r => r.json())
-                .then(d => setAgentStatus(d))
-                .catch(() => {});
-        }, 5000);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    useEffect(() => {
-        // 1. Connect to our new FastAPI WebSocket endpoint for live neural feed
-        const token = getAuthToken();
-        const wsUrl = token ? `${WS_BASE}/ws/neural-feed?token=${token}` : `${WS_BASE}/ws/neural-feed`;
-        const ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-            setIsConnected(true);
-            setLogs((prev) => [...prev, {
-                id: Date.now(),
-                agent: 'SYSTEM',
-                thought: 'Connection established to Sentinel Neural Feed.',
-                timestamp: new Date().toISOString()
-            }]);
-        };
-
-        ws.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                setLogs((prev) => [...prev, { id: Date.now(), ...data }].slice(-50)); // Keep last 50 logs
-            } catch (e) {
-                console.error("Error parsing websocket message:", e);
-            }
-        };
-
-        ws.onclose = () => {
-            setIsConnected(false);
-            setLogs((prev) => [...prev, {
-                id: Date.now(),
-                agent: 'SYSTEM',
-                thought: 'Connection to Neural Feed lost. Reconnecting...',
-                timestamp: new Date().toISOString()
-            }]);
-        };
-
-        return () => {
-            ws.close();
-        };
-    }, []);
 
     // Auto-scroll to bottom of logs
     useEffect(() => {

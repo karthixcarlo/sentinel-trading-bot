@@ -1,46 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, ChevronRight, ChevronLeft, Wifi, WifiOff } from 'lucide-react';
-import { WS_BASE, getAuthToken } from '../api';
 import { AgentBadge } from './ui/Badge';
+import useNeuralFeed from '../hooks/useNeuralFeed';
 
 export default function ReasoningEngine() {
     const [open, setOpen] = useState(false);
-    const [messages, setMessages] = useState([]);
-    const [connected, setConnected] = useState(false);
+    const { messages, connected } = useNeuralFeed({ maxMessages: 100 });
     const feedRef = useRef(null);
-    const wsRef = useRef(null);
-
-    useEffect(() => {
-        let reconnectTimer = null;
-        let unmounted = false;
-        const connect = () => {
-            const token = getAuthToken();
-            const url = token ? `${WS_BASE}/ws/neural-feed?token=${token}` : `${WS_BASE}/ws/neural-feed`;
-            const ws = new WebSocket(url);
-            wsRef.current = ws;
-
-            ws.onopen = () => setConnected(true);
-            ws.onclose = () => {
-                setConnected(false);
-                if (!unmounted) reconnectTimer = setTimeout(connect, 3000);
-            };
-            ws.onerror = () => {};
-            ws.onmessage = (evt) => {
-                try {
-                    const msg = JSON.parse(evt.data);
-                    if (msg.agent === 'Heartbeat') return;
-                    setMessages(prev => [...prev, { ...msg, id: Date.now() + Math.random() }].slice(-100));
-                } catch {}
-            };
-        };
-        connect();
-        return () => {
-            unmounted = true;
-            clearTimeout(reconnectTimer);
-            wsRef.current?.close();
-        };
-    }, []);
 
     // Auto-scroll on new messages
     useEffect(() => {
