@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, ChevronRight, ChevronLeft, Wifi, WifiOff } from 'lucide-react';
-import { WS_BASE } from '../api';
+import { WS_BASE, getAuthToken } from '../api';
 import { AgentBadge } from './ui/Badge';
 
 export default function ReasoningEngine() {
@@ -12,14 +12,18 @@ export default function ReasoningEngine() {
     const wsRef = useRef(null);
 
     useEffect(() => {
+        let reconnectTimer = null;
+        let unmounted = false;
         const connect = () => {
-            const ws = new WebSocket(`${WS_BASE}/ws/neural-feed`);
+            const token = getAuthToken();
+            const url = token ? `${WS_BASE}/ws/neural-feed?token=${token}` : `${WS_BASE}/ws/neural-feed`;
+            const ws = new WebSocket(url);
             wsRef.current = ws;
 
             ws.onopen = () => setConnected(true);
             ws.onclose = () => {
                 setConnected(false);
-                setTimeout(connect, 3000);
+                if (!unmounted) reconnectTimer = setTimeout(connect, 3000);
             };
             ws.onerror = () => {};
             ws.onmessage = (evt) => {
@@ -31,7 +35,11 @@ export default function ReasoningEngine() {
             };
         };
         connect();
-        return () => wsRef.current?.close();
+        return () => {
+            unmounted = true;
+            clearTimeout(reconnectTimer);
+            wsRef.current?.close();
+        };
     }, []);
 
     // Auto-scroll on new messages

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Bot, Play, Square, Activity, Clock, BarChart2, Zap, AlertCircle } from 'lucide-react';
-import { BASE_URL, WS_BASE } from './api';
+import { BASE_URL, WS_BASE, getAuthToken } from './api';
 
 const AGENT_COLORS = {
     Supervisor: '#00D09C', Analyst: '#3B82F6', RiskManager: '#F59E0B',
@@ -70,10 +70,14 @@ export default function AutonomousControl() {
         return () => clearInterval(interval);
     }, []);
 
-    // WebSocket for live neural feed
+    // WebSocket for live neural feed (with auth token + proper cleanup)
     useEffect(() => {
+        let reconnectTimer = null;
+        let unmounted = false;
         const connect = () => {
-            const ws = new WebSocket(`${WS_BASE}/ws/neural-feed`);
+            const token = getAuthToken();
+            const url = token ? `${WS_BASE}/ws/neural-feed?token=${token}` : `${WS_BASE}/ws/neural-feed`;
+            const ws = new WebSocket(url);
             wsRef.current = ws;
             ws.onopen = () => console.log('Neural Feed WebSocket connected');
             ws.onmessage = (evt) => {
@@ -84,10 +88,16 @@ export default function AutonomousControl() {
                 } catch { }
             };
             ws.onerror = () => { };
-            ws.onclose = () => setTimeout(connect, 3000);
+            ws.onclose = () => {
+                if (!unmounted) reconnectTimer = setTimeout(connect, 3000);
+            };
         };
         connect();
-        return () => wsRef.current?.close();
+        return () => {
+            unmounted = true;
+            clearTimeout(reconnectTimer);
+            wsRef.current?.close();
+        };
     }, []);
 
     const toggleAgent = async () => {

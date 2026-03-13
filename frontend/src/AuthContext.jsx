@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
+import { setAuthToken } from './api';
 
 const AuthContext = createContext(null);
 
@@ -27,6 +28,7 @@ export function AuthProvider({ children }) {
             clearTimeout(timeout);
             setSession(session);
             setUser(session?.user ?? null);
+            setAuthToken(session?.access_token ?? null);
             setLoading(false);
         }).catch(() => {
             clearTimeout(timeout);
@@ -37,6 +39,7 @@ export function AuthProvider({ children }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
             setUser(session?.user ?? null);
+            setAuthToken(session?.access_token ?? null);
         });
 
         return () => {

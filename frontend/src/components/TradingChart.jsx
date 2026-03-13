@@ -19,6 +19,8 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
             chartRef.current = null;
         }
 
+        let resizeObserver = null;
+
         const fetchChartData = async () => {
             try {
                 setLoading(true);
@@ -100,7 +102,7 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
                 chart.timeScale().fitContent();
                 setLoading(false);
 
-                const ro = new ResizeObserver(() => {
+                resizeObserver = new ResizeObserver(() => {
                     if (chart && chartContainerRef.current) {
                         chart.applyOptions({
                             width: chartContainerRef.current.clientWidth,
@@ -108,8 +110,7 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
                         });
                     }
                 });
-                ro.observe(chartContainerRef.current);
-                return () => ro.disconnect();
+                resizeObserver.observe(chartContainerRef.current);
 
             } catch (err) {
                 console.error('TradingChart Error:', err);
@@ -121,6 +122,7 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
         fetchChartData();
 
         return () => {
+            if (resizeObserver) resizeObserver.disconnect();
             if (chartRef.current) {
                 chartRef.current.remove();
                 chartRef.current = null;

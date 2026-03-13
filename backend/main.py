@@ -23,19 +23,20 @@ _START_TIME = time.time()
 
 app = FastAPI(title="Project Sentinel API", version="2.0.0")
 
-# CORS — read allowed origins from env; fall back to wildcard so fresh
-# Render deploys work before the env var is configured.
+# CORS — explicit origins only; wildcard + credentials is a spec violation.
 _CORS_RAW = os.environ.get("ALLOWED_ORIGINS", "")
-_CORS_ORIGINS = [o.strip() for o in _CORS_RAW.split(",") if o.strip()] if _CORS_RAW else ["*"]
-
-# Always guarantee these two are present even if ALLOWED_ORIGINS is set
-_REQUIRED_ORIGINS = [
+_CORS_ORIGINS = [o.strip() for o in _CORS_RAW.split(",") if o.strip()] if _CORS_RAW else [
     "https://sentinel-trading-bot.vercel.app",
     "http://localhost:5173",
 ]
-for origin in _REQUIRED_ORIGINS:
-    if origin not in _CORS_ORIGINS and _CORS_ORIGINS != ["*"]:
-        _CORS_ORIGINS.append(origin)
+
+# Guarantee required origins are always present
+for _origin in [
+    "https://sentinel-trading-bot.vercel.app",
+    "http://localhost:5173",
+]:
+    if _origin not in _CORS_ORIGINS:
+        _CORS_ORIGINS.append(_origin)
 
 app.add_middleware(
     CORSMiddleware,
@@ -139,7 +140,7 @@ async def get_portfolio(user_id: str, current_user: str = Depends(get_current_us
 
 
 @app.post("/api/trade/manual")
-async def manual_trade(req: TradeRequest, background_tasks: BackgroundTasks):
+async def manual_trade(req: TradeRequest, background_tasks: BackgroundTasks, current_user: str = Depends(get_current_user)):
     """Endpoint for users to manually trigger the Execution Agent."""
     return {"status": "Trade execution task triggered", "details": req.model_dump()}
 
@@ -150,7 +151,7 @@ class ChatRequest(BaseModel):
     user_id: str
 
 @app.post("/api/chat/copilot")
-async def copilot_chat(req: ChatRequest):
+async def copilot_chat(req: ChatRequest, current_user: str = Depends(get_current_user)):
     """
     Connects to Gemini and fetches the user's latest agent_logs from Supabase
     (with SQLite fallback) to explain the trading system's decision-making process.
@@ -435,7 +436,17 @@ async def websocket_neural_feed(websocket: WebSocket):
     """
     Streams the live 'thoughts' from the Sentinel Agent
     directly to the client for the 'God Mode' dashboard.
+    Accepts an optional ?token= query param for authentication.
     """
+    # Authenticate WebSocket: check optional token query param
+    token = websocket.query_params.get("token")
+    if token and _JWT_SECRET:
+        try:
+            _jwt.decode(token, _JWT_SECRET, algorithms=["HS256"], audience="authenticated")
+        except _jwt.InvalidTokenError:
+            await websocket.close(code=4001, reason="Invalid token")
+            return
+    # Accept connection (allow unauthenticated in demo mode when no JWT secret is configured)
     await websocket.accept()
     active_connections.add(websocket)
 
@@ -477,7 +488,7 @@ async def websocket_neural_feed(websocket: WebSocket):
 # --- AUTONOMOUS TRADING ENDPOINTS ---
 
 @app.post("/api/agent/start")
-async def start_autonomous_trading():
+async def start_autonomous_trading(current_user: str = Depends(get_current_user)):
     """
     Start the autonomous trading agent.
     """
@@ -489,7 +500,7 @@ async def start_autonomous_trading():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/agent/stop")
-async def stop_autonomous_trading():
+async def stop_autonomous_trading(current_user: str = Depends(get_current_user)):
     """
     Stop the autonomous trading agent.
     """
@@ -621,15 +632,17 @@ def _save_settings(user_id: str, s: dict):
     conn.close()
 
 @app.get("/api/settings/{user_id}")
-async def get_settings(user_id: str):
+async def get_settings(user_id: str, current_user: str = Depends(get_current_user)):
     """Load agent constraints for a user."""
-    return _load_settings(user_id)
+    resolved_id = current_user if current_user != "demo_user" else user_id
+    return _load_settings(resolved_id)
 
 @app.put("/api/settings/{user_id}")
-async def update_settings(user_id: str, settings: UserSettings):
+async def update_settings(user_id: str, settings: UserSettings, current_user: str = Depends(get_current_user)):
     """Persist agent constraints and apply them to the live AgentService immediately."""
+    resolved_id = current_user if current_user != "demo_user" else user_id
     s = settings.model_dump()
-    _save_settings(user_id, s)
+    _save_settings(resolved_id, s)
     # Push to live agent so changes take effect without restart
     svc = get_agent_service()
     svc.update_config(s)
@@ -911,11 +924,15 @@ class TradeExecuteRequest(BaseModel):
     limit_price: Optional[float] = None
 
 @app.post("/api/trade/execute")
-async def execute_trade(req: TradeExecuteRequest):
+async def execute_trade(req: TradeExecuteRequest, current_user: str = Depends(get_current_user)):
     """Executes a BUY or SELL trade. Uses Supabase when configured, otherwise falls back to local SQLite demo DB."""
     try:
-        full_symbol = req.symbol.upper()
-        if not full_symbol.endswith(".NS"):
+        # Use JWT identity instead of client-supplied user_id to prevent impersonation
+        resolved_user = current_user if current_user != "demo_user" else req.user_id
+
+        # Validate ticker symbol
+        full_symbol = _validate_ticker(req.symbol)
+        if not full_symbol.endswith(".NS") and not full_symbol.endswith(".BO"):
             full_symbol += ".NS"
 
         # Fetch live market price for MARKET orders
@@ -932,15 +949,15 @@ async def execute_trade(req: TradeExecuteRequest):
                 raise HTTPException(status_code=503, detail=f"Price fetch failed: {e}")
 
         # Determine storage backend: try Supabase first, fall back to SQLite
-        supabase_portfolio = auth.get_user_portfolio(req.user_id)
+        supabase_portfolio = auth.get_user_portfolio(resolved_user)
         use_supabase = supabase_portfolio.get("success", False)
 
         if use_supabase:
             cash = supabase_portfolio.get("cash", 0.0)
             positions = supabase_portfolio.get("positions", [])
         else:
-            cash = _demo_get_cash(req.user_id)
-            positions = _demo_get_positions(req.user_id)
+            cash = _demo_get_cash(resolved_user)
+            positions = _demo_get_positions(resolved_user)
 
         total_cost = req.quantity * exec_price
         brokerage = round(total_cost * 0.0003, 2)
@@ -953,15 +970,15 @@ async def execute_trade(req: TradeExecuteRequest):
             new_cash = round(cash - final_cost, 2)
 
             if use_supabase:
-                tx_r = auth.log_transaction(req.user_id, full_symbol, req.quantity, exec_price, "BUY")
-                ca_r = auth.update_cash_balance(req.user_id, new_cash)
+                tx_r = auth.log_transaction(resolved_user, full_symbol, req.quantity, exec_price, "BUY")
+                ca_r = auth.update_cash_balance(resolved_user, new_cash)
                 if not (tx_r.get("success") and ca_r.get("success")):
                     # Supabase write failed mid-flight — persist to SQLite so state isn't lost
-                    _demo_log_tx(req.user_id, full_symbol, req.quantity, exec_price, "BUY")
-                    _demo_update_cash(req.user_id, new_cash)
+                    _demo_log_tx(resolved_user, full_symbol, req.quantity, exec_price, "BUY")
+                    _demo_update_cash(resolved_user, new_cash)
             else:
-                _demo_log_tx(req.user_id, full_symbol, req.quantity, exec_price, "BUY")
-                _demo_update_cash(req.user_id, new_cash)
+                _demo_log_tx(resolved_user, full_symbol, req.quantity, exec_price, "BUY")
+                _demo_update_cash(resolved_user, new_cash)
 
             return {
                 "status": "success",
@@ -990,14 +1007,14 @@ async def execute_trade(req: TradeExecuteRequest):
             new_cash = round(cash + proceeds, 2)
 
             if use_supabase:
-                tx_r = auth.log_transaction(req.user_id, full_symbol, req.quantity, exec_price, "SELL")
-                ca_r = auth.update_cash_balance(req.user_id, new_cash)
+                tx_r = auth.log_transaction(resolved_user, full_symbol, req.quantity, exec_price, "SELL")
+                ca_r = auth.update_cash_balance(resolved_user, new_cash)
                 if not (tx_r.get("success") and ca_r.get("success")):
-                    _demo_log_tx(req.user_id, full_symbol, req.quantity, exec_price, "SELL")
-                    _demo_update_cash(req.user_id, new_cash)
+                    _demo_log_tx(resolved_user, full_symbol, req.quantity, exec_price, "SELL")
+                    _demo_update_cash(resolved_user, new_cash)
             else:
-                _demo_log_tx(req.user_id, full_symbol, req.quantity, exec_price, "SELL")
-                _demo_update_cash(req.user_id, new_cash)
+                _demo_log_tx(resolved_user, full_symbol, req.quantity, exec_price, "SELL")
+                _demo_update_cash(resolved_user, new_cash)
 
             return {
                 "status": "success",

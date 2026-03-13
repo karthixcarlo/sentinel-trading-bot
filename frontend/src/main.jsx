@@ -15,6 +15,7 @@ import TradeExecutor from './TradeExecutor.jsx'
 import GodMode from './GodMode.jsx'
 import AutonomousControl from './AutonomousControl.jsx'
 import Settings from './Settings.jsx'
+import { ErrorBoundary } from './components/ErrorBoundary.jsx'
 import './index.css'
 
 function ProtectedRoute({ children }) {
@@ -39,16 +40,16 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Routes>
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/market" element={<Market />} />
-                        <Route path="/discover" element={<Discover />} />
-                        <Route path="/analyze/:ticker" element={<Analyze />} />
-                        <Route path="/portfolio" element={<Portfolio />} />
-                        <Route path="/trade" element={<TradeExecutor />} />
-                        <Route path="/god-mode" element={<GodMode />} />
-                        <Route path="/autonomous" element={<AutonomousControl />} />
-                        <Route path="/settings" element={<Settings />} />
+                    <Route element={<ProtectedRoute><ErrorBoundary fallbackMessage="The app encountered an unexpected error. Click below to retry."><Layout /></ErrorBoundary></ProtectedRoute>}>
+                        <Route path="/dashboard" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+                        <Route path="/market" element={<ErrorBoundary><Market /></ErrorBoundary>} />
+                        <Route path="/discover" element={<ErrorBoundary><Discover /></ErrorBoundary>} />
+                        <Route path="/analyze/:ticker" element={<ErrorBoundary><Analyze /></ErrorBoundary>} />
+                        <Route path="/portfolio" element={<ErrorBoundary><Portfolio /></ErrorBoundary>} />
+                        <Route path="/trade" element={<ErrorBoundary><TradeExecutor /></ErrorBoundary>} />
+                        <Route path="/god-mode" element={<ErrorBoundary><GodMode /></ErrorBoundary>} />
+                        <Route path="/autonomous" element={<ErrorBoundary><AutonomousControl /></ErrorBoundary>} />
+                        <Route path="/settings" element={<ErrorBoundary><Settings /></ErrorBoundary>} />
                     </Route>
                 </Routes>
             </AuthProvider>
