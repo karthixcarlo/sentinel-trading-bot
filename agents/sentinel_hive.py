@@ -11,12 +11,12 @@ Architecture:
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langgraph.graph import StateGraph, END
 from typing import Literal
 
-from sentinel_state import SentinelState, create_initial_state
+from agents.sentinel_state import SentinelState, create_initial_state
 from agents.supervisor import supervisor_node
 from agents.scout_agent import scout_node
 from agents.analyst_agent import analyst_node

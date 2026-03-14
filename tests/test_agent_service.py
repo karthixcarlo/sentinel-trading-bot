@@ -6,7 +6,7 @@ Tests for AgentService configuration, status reporting, and portfolio management
 
 import json
 import pytest
-from agent_service import AgentService, AgentStatus, Portfolio, Position, SECTOR_STOCKS
+from agents.agent_service import AgentService, AgentStatus, Portfolio, Position, SECTOR_STOCKS
 
 
 class TestAgentStatus:

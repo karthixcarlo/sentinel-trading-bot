@@ -4,7 +4,7 @@ import sqlite3
 from typing import List
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from agent_service import get_agent_service
+from agents.agent_service import get_agent_service
 from backend.deps import get_current_user, resolve_user_id, ROOT_DIR
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])

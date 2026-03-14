@@ -18,7 +18,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from dotenv import load_dotenv
 
-from sentinel_state import SentinelState
+from agents.sentinel_state import SentinelState
 
 load_dotenv()
 
@@ -192,7 +192,7 @@ def fallback_decision(state: SentinelState) -> str:
 
 # Test function
 if __name__ == "__main__":
-    from sentinel_state import create_initial_state
+    from agents.sentinel_state import create_initial_state
     
     print("Testing Supervisor Agent...")
     

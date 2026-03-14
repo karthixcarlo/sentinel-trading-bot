@@ -17,7 +17,7 @@ import pandas as pd
 
 
 # Database file location
-DB_PATH = Path(__file__).parent / "sentinel.db"
+DB_PATH = Path(__file__).parent.parent / "sentinel.db"
 
 
 def init_database():

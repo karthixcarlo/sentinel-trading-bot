@@ -4,7 +4,7 @@ Sentinel State — Unit Tests
 Tests for the shared LangGraph state schema and initial state factory.
 """
 
-from sentinel_state import create_initial_state, SentinelState
+from agents.sentinel_state import create_initial_state, SentinelState
 
 
 def test_create_initial_state_returns_dict():

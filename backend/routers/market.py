@@ -140,7 +140,7 @@ async def analyze_stock(ticker: str):
     """Generates an AI deep dive report on a specific equity."""
     try:
         ticker = validate_ticker(ticker)
-        from langgraph_agents import llm
+        from agents.langgraph_agents import llm
 
         fetch_ticker = ticker + ".NS" if not ticker.endswith(".NS") else ticker
         stock = yf.Ticker(fetch_ticker)

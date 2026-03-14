@@ -23,7 +23,7 @@ async def copilot_chat(req: ChatRequest, current_user: str = Depends(get_current
     (with SQLite fallback) to explain the trading system's decision-making process.
     """
     try:
-        from langgraph_agents import llm
+        from agents.langgraph_agents import llm
 
         # 1. Fetch recent agent context — Supabase first, SQLite fallback
         context_str = "No recent agent activity found."

@@ -5,7 +5,7 @@ Tests for input validation in the trade execution engine.
 """
 
 import pytest
-from broker_engine import execute_order
+from services.broker_engine import execute_order
 
 
 class TestBrokerValidation:

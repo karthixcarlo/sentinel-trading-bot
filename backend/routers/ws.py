@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from fastapi import APIRouter, WebSocket, HTTPException
 import jwt as _jwt
-from agent_service import get_agent_service
+from agents.agent_service import get_agent_service
 
 router = APIRouter(tags=["websocket"])
 

@@ -19,9 +19,9 @@ import pandas as pd
 from typing import Dict, List, Tuple
 from langchain_core.messages import HumanMessage
 
-from sentinel_state import SentinelState
-from database_manager import log_agent_thought
-from market_loader import get_market_loader
+from agents.sentinel_state import SentinelState
+from services.database_manager import log_agent_thought
+from services.market_loader import get_market_loader
 
 
 # Smart filtering thresholds
@@ -323,7 +323,7 @@ def scout_node(state: SentinelState) -> SentinelState:
 
 # Test function
 if __name__ == "__main__":
-    from sentinel_state import create_initial_state
+    from agents.sentinel_state import create_initial_state
     
     print("Testing upgraded Scout Agent...")
     

@@ -22,8 +22,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import yfinance as yf
 from langchain_core.messages import AIMessage
 
-from sentinel_state import SentinelState
-from broker_engine import execute_order as broker_execute_order
+from agents.sentinel_state import SentinelState
+from services.broker_engine import execute_order as broker_execute_order
 
 
 # Position sizing — 2% of available cash per trade
@@ -181,7 +181,7 @@ def trader_node(state: SentinelState) -> SentinelState:
 # Quick standalone test
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    from sentinel_state import create_initial_state
+    from agents.sentinel_state import create_initial_state
 
     print("=== Trader Agent Standalone Test ===\n")
 

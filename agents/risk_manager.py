@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langchain_core.messages import AIMessage
 
-from sentinel_state import SentinelState
+from agents.sentinel_state import SentinelState
 
 
 # Risk configuration defaults
@@ -153,7 +153,7 @@ def risk_node(state: SentinelState) -> SentinelState:
 
 # Test function
 if __name__ == "__main__":
-    from sentinel_state import create_initial_state
+    from agents.sentinel_state import create_initial_state
     
     print("Testing Risk Manager Agent...")
     

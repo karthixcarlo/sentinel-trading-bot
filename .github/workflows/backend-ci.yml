@@ -7,10 +7,6 @@ on:
       - "backend/**"
       - "agents/**"
       - "services/**"
-      - "agent_service.py"
-      - "sentinel_hive.py"
-      - "sentinel_state.py"
-      - "broker_engine.py"
       - "requirements.txt"
       - ".github/workflows/backend-ci.yml"
   pull_request:
@@ -19,10 +15,6 @@ on:
       - "backend/**"
       - "agents/**"
       - "services/**"
-      - "agent_service.py"
-      - "sentinel_hive.py"
-      - "sentinel_state.py"
-      - "broker_engine.py"
       - "requirements.txt"
       - ".github/workflows/backend-ci.yml"
 
@@ -41,10 +33,10 @@ jobs:
         run: pip install ruff
 
       - name: Ruff check (lint)
-        run: ruff check backend/ agents/ services/ agent_service.py sentinel_hive.py sentinel_state.py broker_engine.py --select E,F,W --ignore E501,E402,W293,W291
+        run: ruff check backend/ agents/ services/ --select E,F,W --ignore E501,E402,W293,W291
 
       - name: Ruff format check
-        run: ruff format --check backend/ agents/ services/ agent_service.py sentinel_hive.py sentinel_state.py broker_engine.py || true
+        run: ruff format --check backend/ agents/ services/ || true
 
   compile:
     name: Compile Check
@@ -64,10 +56,11 @@ jobs:
       - name: Compile all Python files
         run: |
           python -m py_compile backend/main.py
-          python -m py_compile agent_service.py
-          python -m py_compile sentinel_hive.py
-          python -m py_compile sentinel_state.py
-          python -m py_compile broker_engine.py
+          python -m py_compile agents/agent_service.py
+          python -m py_compile agents/sentinel_hive.py
+          python -m py_compile agents/sentinel_state.py
+          python -m py_compile agents/langgraph_agents.py
+          python -m py_compile agents/analyst_agent_gemini.py
           python -m py_compile agents/supervisor.py
           python -m py_compile agents/scout_agent.py
           python -m py_compile agents/analyst_agent.py
@@ -75,6 +68,9 @@ jobs:
           python -m py_compile agents/trader_agent.py
           python -m py_compile services/auth_manager.py
           python -m py_compile services/news_loader.py
+          python -m py_compile services/broker_engine.py
+          python -m py_compile services/database_manager.py
+          python -m py_compile services/market_loader.py
 
   test:
     name: Tests (pytest)

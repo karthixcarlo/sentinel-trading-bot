@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from agent_service import get_agent_service
+from agents.agent_service import get_agent_service
 from backend.deps import get_current_user
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])

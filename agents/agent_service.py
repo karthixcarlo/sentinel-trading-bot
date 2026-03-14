@@ -32,7 +32,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Database path
-DB_PATH = Path(__file__).parent / "sentinel.db"
+DB_PATH = Path(__file__).parent.parent / "sentinel.db"
 
 
 class AgentStatus(Enum):
@@ -280,8 +280,8 @@ class AgentService:
 
     async def _autonomous_loop(self):
         """Run the real LangGraph multi-agent pipeline in a continuous loop."""
-        from sentinel_hive import create_sentinel_graph
-        from sentinel_state import create_initial_state
+        from agents.sentinel_hive import create_sentinel_graph
+        from agents.sentinel_state import create_initial_state
 
         iteration = 0
         consecutive_errors = 0

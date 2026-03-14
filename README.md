@@ -280,30 +280,31 @@ sentinel-trading-bot/
 │   ├── vercel.json                # Vercel deployment config
 │   ├── package.json               # Dependencies
 │   └── tailwind.config.js         # Tailwind theme (dark + light palettes)
-├── services/
-│   ├── auth_manager.py            # Supabase auth + portfolio DB operations
-│   └── news_loader.py             # News scraping for AI analyst context
 ├── agents/
 │   ├── supervisor.py              # LangGraph routing agent
 │   ├── scout_agent.py             # Stock discovery (yfinance)
 │   ├── analyst_agent.py           # Gemini AI analysis
+│   ├── analyst_agent_gemini.py    # Core Gemini AI analyst integration
 │   ├── risk_manager.py            # Dynamic risk thresholds
-│   └── trader_agent.py            # Order execution
-├── agent_service.py               # AgentService singleton (runs LangGraph)
-├── sentinel_hive.py               # LangGraph StateGraph definition
-├── sentinel_state.py              # Shared typed state (TypedDict)
-├── langgraph_agents.py            # Shared Gemini LLM instance
-├── broker_engine.py               # Trade execution engine
-├── database_manager.py            # SQLite thought + trade logging
-├── market_loader.py               # yfinance market data loader
-├── analyst_agent_gemini.py        # Core Gemini AI analyst integration
+│   ├── trader_agent.py            # Order execution
+│   ├── agent_service.py           # AgentService singleton (runs LangGraph)
+│   ├── sentinel_hive.py           # LangGraph StateGraph definition
+│   ├── sentinel_state.py          # Shared typed state (TypedDict)
+│   └── langgraph_agents.py        # Shared Gemini LLM instance
+├── services/
+│   ├── auth_manager.py            # Supabase auth + portfolio DB operations
+│   ├── news_loader.py             # News scraping for AI analyst context
+│   ├── broker_engine.py           # Trade execution engine
+│   ├── database_manager.py        # SQLite thought + trade logging
+│   └── market_loader.py           # yfinance market data loader
+├── tests/                          # pytest test suite
 ├── supabase_setup.sql             # Idempotent DB schema + RLS + triggers
-├── .env.example                   # Environment variable template
 ├── render.yaml                    # Render deployment config
+├── requirements.txt               # Python dependencies
 ├── .github/workflows/
 │   ├── backend-ci.yml             # Backend CI: Ruff lint + compile + pytest
 │   └── frontend-ci.yml            # Frontend CI: ESLint + Vite build
-└── .gitignore                     # node_modules, dist, .env, *.db excluded
+└── .gitignore
 ```
 
 ---
