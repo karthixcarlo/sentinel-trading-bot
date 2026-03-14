@@ -25,17 +25,3 @@ export function AgentBadge({ name }) {
     );
 }
 
-export function StatusBadge({ status }) {
-    const config = {
-        running: { bg: 'bg-accent-green/15', text: 'text-accent-green', label: 'LIVE' },
-        stopped: { bg: 'bg-accent-red/15', text: 'text-accent-red', label: 'STOPPED' },
-        idle: { bg: 'bg-dark-muted/15', text: 'text-dark-muted', label: 'IDLE' },
-    };
-    const c = config[status] || config.idle;
-    return (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider ${c.bg} ${c.text}`}>
-            {status === 'running' && <span className="w-1.5 h-1.5 rounded-full bg-accent-green mr-1.5 animate-pulse" />}
-            {c.label}
-        </span>
-    );
-}

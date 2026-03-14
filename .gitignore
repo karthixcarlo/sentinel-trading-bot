@@ -1,0 +1,107 @@
+# ============================================================
+# Project Sentinel V2 — .gitignore
+# Stack: React (Vite) + FastAPI + LangGraph + Supabase
+# ============================================================
+
+# --- Node / Frontend ---
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# --- Python cache ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+.Python
+
+# --- Distribution / build ---
+*.egg-info/
+*.egg
+build/
+dist/
+develop-eggs/
+eggs/
+.eggs/
+MANIFEST
+pip-wheel-metadata/
+wheels/
+
+# --- Databases (never commit live data) ---
+*.db
+*.sqlite3
+*.sqlite3-journal
+
+# --- Environment secrets ---
+.env
+.env.local
+.env.*.local
+
+# --- Test / coverage ---
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+coverage.xml
+*.cover
+nosetests.xml
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.antigravityignore
+
+# --- Claude Code (local settings) ---
+.claude/
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Cache ---
+.cache/
+temp/
+tmp/
+
+# --- Streamlit (legacy, no longer used) ---
+.streamlit/
+
+# --- Type checkers ---
+.mypy_cache/
+.pyre/
+.dmypy.json
+dmypy.json
+
+# --- Skills / Agent tooling (local dev only) ---
+.agents/
+.agent/
+skills-lock.json
+
+# --- Dev utilities (local only) ---
+dev_sync_watcher.py
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.ipynb
+
+# --- Render local cache ---
+.render/

@@ -299,9 +299,8 @@ sentinel-trading-bot/
 ├── analyst_agent_gemini.py        # Core Gemini AI analyst integration
 ├── supabase_setup.sql             # Idempotent DB schema + RLS + triggers
 ├── .env.example                   # Environment variable template
-├── Procfile                       # Render deployment entry point
+├── render.yaml                    # Render deployment config
 ├── .github/workflows/
-│   ├── ci.yml                     # Legacy CI (compile + build)
 │   ├── backend-ci.yml             # Backend CI: Ruff lint + compile + pytest
 │   └── frontend-ci.yml            # Frontend CI: ESLint + Vite build
 └── .gitignore                     # node_modules, dist, .env, *.db excluded
