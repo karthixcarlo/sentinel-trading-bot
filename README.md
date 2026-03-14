@@ -17,6 +17,7 @@
 Sentinel is a **production-grade autonomous paper trading platform** built on a **LangGraph multi-agent system** powered by **Google Gemini 2.5 Flash**. Five specialized AI agents work together to discover stocks, analyze them with AI + technical indicators, assess risk with configurable thresholds, and execute paper trades on the NSE.
 
 **Live Demo:** [sentinel-trading-bot.vercel.app](https://sentinel-trading-bot.vercel.app)
+**Back end:** https://sentinel-trading-bot.onrender.com (Note:Click on this link before clicking on Live Demo)
 
 ---
 
