@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from services import auth_manager as auth
-from backend.deps import get_current_user, resolve_user_id
+from backend.deps import get_current_user, resolve_user_id, limiter
 import yfinance as yf
 
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
 
 
 @router.get("/{user_id}")
-async def get_portfolio(user_id: str, current_user: str = Depends(get_current_user)):
+@limiter.limit("20/minute")
+async def get_portfolio(request: Request, user_id: str, current_user: str = Depends(get_current_user)):
     """Retrieves the user's cash and holdings."""
     resolved_id = resolve_user_id(current_user, user_id)
     portfolio = auth.get_user_portfolio(resolved_id)
@@ -22,9 +23,13 @@ async def get_portfolio(user_id: str, current_user: str = Depends(get_current_us
 
 
 @router.get("/{user_id}/detail")
-async def get_portfolio_detail(user_id: str):
+@limiter.limit("20/minute")
+async def get_portfolio_detail(request: Request, user_id: str, current_user: str = Depends(get_current_user)):
     """Returns portfolio with per-position P&L breakdown. Always returns 200."""
     from backend.routers.trade import _demo_get_cash, _demo_get_positions
+
+    # Resolve to JWT identity — prevents IDOR (user fetching another user's portfolio)
+    user_id = resolve_user_id(current_user, user_id)
 
     DEMO = {
         "cash": 100000.0,
@@ -36,7 +41,7 @@ async def get_portfolio_detail(user_id: str):
         "orders": [],
     }
     try:
-        portfolio = auth.get_user_portfolio(user_id)
+        portfolio = auth.get_user_portfolio(user_id)  # user_id already resolved above
     except Exception:
         return DEMO
 

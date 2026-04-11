@@ -1,14 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from datetime import datetime, timedelta
 import yfinance as yf
 from services import auth_manager as auth
-from backend.deps import validate_ticker
+from backend.deps import validate_ticker, limiter
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
 
 @router.get("/ohlcv/{ticker}")
-async def get_ohlcv(ticker: str, user_id: str | None = None):
+@limiter.limit("20/minute")
+async def get_ohlcv(request: Request, ticker: str, user_id: str | None = None):
     """Fetches historical daily OHLCV via yfinance, formatted for lightweight-charts."""
     try:
         ticker = validate_ticker(ticker)
@@ -93,7 +94,8 @@ DEMO_DISCOVER = [
 
 
 @router.get("/discover")
-async def get_market_discover():
+@limiter.limit("20/minute")
+async def get_market_discover(request: Request):
     """Fetches live market data for the Discovery grid."""
     try:
         symbols = [
@@ -136,7 +138,8 @@ async def get_market_discover():
 
 
 @router.get("/analyze/{ticker}")
-async def analyze_stock(ticker: str):
+@limiter.limit("5/minute")
+async def analyze_stock(request: Request, ticker: str):
     """Generates an AI deep dive report on a specific equity."""
     try:
         ticker = validate_ticker(ticker)
@@ -185,7 +188,8 @@ Keep it highly professional, formatting it beautifully in markdown. Do not hallu
 
 
 @router.get("/indices")
-async def get_market_indices():
+@limiter.limit("20/minute")
+async def get_market_indices(request: Request):
     """Fetches live Nifty 50, Bank Nifty, and Sensex index data."""
     fallback = [
         {"name": "Nifty 50",   "symbol": "^NSEI",    "value": 22150.50, "change": 1.25},

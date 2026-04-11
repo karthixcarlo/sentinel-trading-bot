@@ -7,8 +7,11 @@ import sys
 import os
 import time
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from backend.deps import limiter
 
 # Add project root to path so we can import shared modules
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,6 +23,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 _START_TIME = time.time()
 
 app = FastAPI(title="Project Sentinel API", version="2.0.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS — explicit origins only; wildcard + credentials is a spec violation.
 _CORS_RAW = os.environ.get("ALLOWED_ORIGINS", "")
@@ -47,7 +52,8 @@ app.add_middleware(
 
 # --- Health check (kept here — it's the only non-router endpoint) ---
 @app.get("/api/health")
-async def health_check():
+@limiter.limit("30/minute")
+async def health_check(request: Request):
     """Returns service health status, uptime, and version."""
     uptime_secs = time.time() - _START_TIME
     return {

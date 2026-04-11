@@ -1,9 +1,9 @@
 import os
 import sqlite3
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from services import auth_manager as auth
-from backend.deps import get_current_user, ROOT_DIR
+from backend.deps import get_current_user, ROOT_DIR, limiter
 
 router = APIRouter(prefix="/api/watchlist", tags=["watchlist"])
 
@@ -28,7 +28,8 @@ class WatchlistAddRequest(BaseModel):
 
 
 @router.get("")
-async def get_watchlist(current_user: str = Depends(get_current_user)):
+@limiter.limit("30/minute")
+async def get_watchlist(request: Request, current_user: str = Depends(get_current_user)):
     """Returns the authenticated user's watchlist tickers."""
     # Try Supabase first
     try:
@@ -50,7 +51,8 @@ async def get_watchlist(current_user: str = Depends(get_current_user)):
 
 
 @router.post("")
-async def add_to_watchlist(req: WatchlistAddRequest, current_user: str = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def add_to_watchlist(request: Request, req: WatchlistAddRequest, current_user: str = Depends(get_current_user)):
     """Adds a ticker to the user's watchlist."""
     ticker = req.ticker.upper().strip()
     # Try Supabase first
@@ -73,7 +75,8 @@ async def add_to_watchlist(req: WatchlistAddRequest, current_user: str = Depends
 
 
 @router.delete("/{ticker}")
-async def remove_from_watchlist(ticker: str, current_user: str = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def remove_from_watchlist(request: Request, ticker: str, current_user: str = Depends(get_current_user)):
     """Removes a ticker from the user's watchlist."""
     ticker = ticker.upper().strip()
     # Try Supabase first

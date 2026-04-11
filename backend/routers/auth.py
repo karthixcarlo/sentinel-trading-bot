@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from services import auth_manager as auth
+from backend.deps import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -11,7 +12,8 @@ class LoginRequest(BaseModel):
 
 
 @router.post("/login")
-async def login(req: LoginRequest):
+@limiter.limit("5/minute")
+async def login(request: Request, req: LoginRequest):
     """Interfaces with Supabase Auth to validate users."""
     result = auth.sign_in(req.email, req.password)
     if result.get("success"):

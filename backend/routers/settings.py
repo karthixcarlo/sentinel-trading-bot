@@ -2,10 +2,10 @@ import os
 import json
 import sqlite3
 from typing import List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from agents.agent_service import get_agent_service
-from backend.deps import get_current_user, resolve_user_id, ROOT_DIR
+from backend.deps import get_current_user, resolve_user_id, ROOT_DIR, limiter
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -65,14 +65,16 @@ def _save_settings(user_id: str, s: dict):
 
 
 @router.get("/{user_id}")
-async def get_settings(user_id: str, current_user: str = Depends(get_current_user)):
+@limiter.limit("20/minute")
+async def get_settings(request: Request, user_id: str, current_user: str = Depends(get_current_user)):
     """Load agent constraints for a user."""
     resolved_id = resolve_user_id(current_user, user_id)
     return _load_settings(resolved_id)
 
 
 @router.put("/{user_id}")
-async def update_settings(user_id: str, settings: UserSettings, current_user: str = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def update_settings(request: Request, user_id: str, settings: UserSettings, current_user: str = Depends(get_current_user)):
     """Persist agent constraints and apply them to the live AgentService."""
     resolved_id = resolve_user_id(current_user, user_id)
     s = settings.model_dump()

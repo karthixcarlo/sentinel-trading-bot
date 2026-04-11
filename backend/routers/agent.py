@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from agents.agent_service import get_agent_service
-from backend.deps import get_current_user
+from backend.deps import get_current_user, limiter
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 
 
 @router.post("/start")
-async def start_autonomous_trading(current_user: str = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def start_autonomous_trading(request: Request, current_user: str = Depends(get_current_user)):
     """Start the autonomous trading agent."""
     try:
         agent_service = get_agent_service()
@@ -17,7 +18,8 @@ async def start_autonomous_trading(current_user: str = Depends(get_current_user)
 
 
 @router.post("/stop")
-async def stop_autonomous_trading(current_user: str = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def stop_autonomous_trading(request: Request, current_user: str = Depends(get_current_user)):
     """Stop the autonomous trading agent."""
     try:
         agent_service = get_agent_service()
@@ -28,7 +30,8 @@ async def stop_autonomous_trading(current_user: str = Depends(get_current_user))
 
 
 @router.get("/status")
-async def get_agent_status():
+@limiter.limit("30/minute")
+async def get_agent_status(request: Request):
     """Get current status of the autonomous agent."""
     try:
         agent_service = get_agent_service()
@@ -38,7 +41,8 @@ async def get_agent_status():
 
 
 @router.get("/portfolio")
-async def get_agent_portfolio():
+@limiter.limit("20/minute")
+async def get_agent_portfolio(request: Request):
     """Get current portfolio managed by the agent."""
     try:
         agent_service = get_agent_service()
@@ -48,7 +52,8 @@ async def get_agent_portfolio():
 
 
 @router.get("/thoughts")
-async def get_agent_thoughts(limit: int = 50):
+@limiter.limit("20/minute")
+async def get_agent_thoughts(request: Request, limit: int = 50):
     """Get recent agent thoughts/logs."""
     try:
         agent_service = get_agent_service()
@@ -58,7 +63,8 @@ async def get_agent_thoughts(limit: int = 50):
 
 
 @router.get("/trades")
-async def get_agent_trades(limit: int = 50):
+@limiter.limit("20/minute")
+async def get_agent_trades(request: Request, limit: int = 50):
     """Get trade history."""
     try:
         agent_service = get_agent_service()

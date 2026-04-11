@@ -1,10 +1,10 @@
 import os
 import sqlite3
 import logging
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from services import auth_manager as auth
-from backend.deps import get_current_user, ROOT_DIR
+from backend.deps import get_current_user, ROOT_DIR, limiter
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -13,11 +13,11 @@ logger = logging.getLogger("sentinel")
 
 class ChatRequest(BaseModel):
     message: str
-    user_id: str
 
 
 @router.post("/copilot")
-async def copilot_chat(req: ChatRequest, current_user: str = Depends(get_current_user)):
+@limiter.limit("5/minute")
+async def copilot_chat(request: Request, req: ChatRequest, current_user: str = Depends(get_current_user)):
     """
     Connects to Gemini and fetches the user's latest agent_logs from Supabase
     (with SQLite fallback) to explain the trading system's decision-making process.
@@ -31,7 +31,7 @@ async def copilot_chat(req: ChatRequest, current_user: str = Depends(get_current
         try:
             client = auth.get_client()
             logs = client.table("agent_logs").select("agent_name, message, timestamp") \
-                .eq("user_id", req.user_id) \
+                .eq("user_id", current_user) \
                 .order("timestamp", desc=True) \
                 .limit(15) \
                 .execute()

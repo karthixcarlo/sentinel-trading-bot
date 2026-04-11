@@ -7,7 +7,12 @@ import logging
 import jwt as _jwt
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 import re
+
+# Shared rate limiter instance — imported by every router
+limiter = Limiter(key_func=get_remote_address)
 
 # Project root (one level up from backend/)
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

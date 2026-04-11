@@ -2,10 +2,10 @@ import os
 import sqlite3
 from typing import Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel
 from services import auth_manager as auth
-from backend.deps import get_current_user, validate_ticker, resolve_user_id, logger, ROOT_DIR
+from backend.deps import get_current_user, validate_ticker, resolve_user_id, logger, ROOT_DIR, limiter
 import yfinance as yf
 
 router = APIRouter(prefix="/api/trade", tags=["trade"])
@@ -100,13 +100,15 @@ class TradeExecuteRequest(BaseModel):
 # --- Endpoints ---
 
 @router.post("/manual")
-async def manual_trade(req: TradeRequest, background_tasks: BackgroundTasks, current_user: str = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def manual_trade(request: Request, req: TradeRequest, background_tasks: BackgroundTasks, current_user: str = Depends(get_current_user)):
     """Endpoint for users to manually trigger the Execution Agent."""
     return {"status": "Trade execution task triggered", "details": req.model_dump()}
 
 
 @router.post("/execute")
-async def execute_trade(req: TradeExecuteRequest, current_user: str = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def execute_trade(request: Request, req: TradeExecuteRequest, current_user: str = Depends(get_current_user)):
     """Executes a BUY or SELL trade."""
     try:
         resolved_user = resolve_user_id(current_user, req.user_id)

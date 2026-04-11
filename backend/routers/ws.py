@@ -2,9 +2,10 @@ import os
 import asyncio
 import logging
 from datetime import datetime
-from fastapi import APIRouter, WebSocket, HTTPException
+from fastapi import APIRouter, WebSocket, HTTPException, Request
 import jwt as _jwt
 from agents.agent_service import get_agent_service
+from backend.deps import limiter
 
 router = APIRouter(tags=["websocket"])
 
@@ -82,7 +83,8 @@ async def websocket_neural_feed(websocket: WebSocket):
 
 
 @router.get("/api/autonomous/status")
-async def get_autonomous_status():
+@limiter.limit("30/minute")
+async def get_autonomous_status(request: Request):
     """
     Lightweight endpoint: returns only the fields the UI needs to reflect
     server-side autonomous state (running flag + start_time).
