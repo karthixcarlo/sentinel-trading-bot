@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Zap, AlertCircle, CheckCircle, ArrowLeft, ChevronDown } from 'lucide-react';
-import { BASE_URL } from './api';
+import { api } from './api';
+import { useAuth } from './AuthContext';
 
 export default function TradeExecutor() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const userId = user?.id || 'demo_user';
     const [searchParams] = useSearchParams();
 
     const [symbol, setSymbol] = useState(searchParams.get('symbol') || '');
@@ -18,19 +21,19 @@ export default function TradeExecutor() {
     const [previewPrice, setPreviewPrice] = useState(null);
 
     const refreshPortfolio = () => {
-        fetch(`${BASE_URL}/api/portfolio/demo_user/detail`)
+        api.get(`/api/portfolio/${userId}/detail`)
             .then(r => { if (!r.ok) throw new Error('non-2xx'); return r.json(); })
             .then(setPortfolio)
             .catch(() => setPortfolio({ cash: 100000, portfolio_value: 100000, positions: [] }));
     };
 
-    useEffect(() => { refreshPortfolio(); }, []);
+    useEffect(() => { refreshPortfolio(); }, [userId]);
 
     // Debounced live price preview
     useEffect(() => {
         if (!symbol || symbol.length < 2) { setPreviewPrice(null); return; }
         const t = setTimeout(() => {
-            fetch(`${BASE_URL}/api/market/ohlcv/${symbol}.NS`)
+            api.get(`/api/market/ohlcv/${symbol}.NS`)
                 .then(r => r.json())
                 .then(data => {
                     if (data.ohlc && data.ohlc.length > 0)
@@ -54,18 +57,14 @@ export default function TradeExecutor() {
         setResult(null);
         try {
             const body = {
-                user_id: 'demo_user',
+                user_id: userId,
                 symbol: symbol.toUpperCase().trim(),
                 action,
                 quantity: parseInt(quantity),
                 order_type: orderType,
                 limit_price: orderType === 'LIMIT' ? parseFloat(limitPrice) : null,
             };
-            const res = await fetch(`${BASE_URL}/api/trade/execute`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            });
+            const res = await api.post('/api/trade/execute', body);
             const data = await res.json();
             if (res.ok) {
                 setResult({ ok: true, message: data.message });

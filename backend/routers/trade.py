@@ -3,7 +3,7 @@ import sqlite3
 from typing import Optional
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from services import auth_manager as auth
 from backend.deps import get_current_user, validate_ticker, resolve_user_id, logger, ROOT_DIR, limiter
 import yfinance as yf
@@ -85,16 +85,16 @@ class TradeRequest(BaseModel):
     user_id: str
     symbol: str
     action: str
-    quantity: int
+    quantity: int = Field(gt=0)
 
 
 class TradeExecuteRequest(BaseModel):
     user_id: str
     symbol: str
     action: str  # "BUY" or "SELL"
-    quantity: int
+    quantity: int = Field(gt=0)
     order_type: Optional[str] = "MARKET"
-    limit_price: Optional[float] = None
+    limit_price: Optional[float] = Field(default=None, gt=0)
 
 
 # --- Endpoints ---
@@ -127,7 +127,8 @@ async def execute_trade(request: Request, req: TradeExecuteRequest, current_user
             except HTTPException:
                 raise
             except Exception as e:
-                raise HTTPException(status_code=503, detail=f"Price fetch failed: {e}")
+                logger.error(f"Price fetch failed for {full_symbol}: {e}")
+                raise HTTPException(status_code=503, detail="Price fetch failed. Please try again.")
 
         supabase_portfolio = auth.get_user_portfolio(resolved_user)
         use_supabase = supabase_portfolio.get("success", False)
@@ -203,4 +204,4 @@ async def execute_trade(request: Request, req: TradeExecuteRequest, current_user
         raise
     except Exception as e:
         logger.error(f"Trade Execute Error: {e}")
-        raise HTTPException(status_code=500, detail=f"Trade execution failed: {e}")
+        raise HTTPException(status_code=500, detail="Trade execution failed. Please try again.")

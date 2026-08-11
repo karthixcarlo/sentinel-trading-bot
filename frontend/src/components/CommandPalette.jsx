@@ -5,7 +5,7 @@ import {
     Search, LayoutDashboard, BarChart2, Compass, Briefcase, Zap,
     Terminal, Bot, Settings, Play, Square, TrendingUp
 } from 'lucide-react';
-import { BASE_URL } from '../api';
+import { api } from '../api';
 
 const PAGES = [
     { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, keywords: 'home overview portfolio' },
@@ -58,7 +58,7 @@ export default function CommandPalette({ open, onClose }) {
         setQuery('');
         if (item.type === 'action') {
             const endpoint = item.action === 'start' ? '/api/agent/start' : '/api/agent/stop';
-            try { await fetch(`${BASE_URL}${endpoint}`, { method: 'POST' }); } catch {}
+            try { await api.post(endpoint); } catch {}
         } else {
             navigate(item.path);
         }

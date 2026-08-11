@@ -3,7 +3,7 @@ import sqlite3
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from services import auth_manager as auth
-from backend.deps import get_current_user, ROOT_DIR, limiter
+from backend.deps import get_current_user, ROOT_DIR, limiter, logger
 
 router = APIRouter(prefix="/api/watchlist", tags=["watchlist"])
 
@@ -70,7 +70,8 @@ async def add_to_watchlist(request: Request, req: WatchlistAddRequest, current_u
         conn.commit()
         conn.close()
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Watchlist add failed: {e}")
+        raise HTTPException(status_code=400, detail="Failed to add ticker to watchlist.")
     return {"status": "success", "ticker": ticker}
 
 

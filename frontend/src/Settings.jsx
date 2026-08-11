@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Save, ShieldAlert, BadgeCheck, Check } from 'lucide-react';
-import { BASE_URL } from './api';
+import { api } from './api';
+import { useAuth } from './AuthContext';
 
 export default function Settings() {
+    const { user } = useAuth();
+    const userId = user?.id || 'demo_user';
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -16,7 +19,7 @@ export default function Settings() {
     const availableSectors = ['IT', 'Banking', 'Energy', 'Automobile', 'FMCG', 'Pharma', 'Metals'];
 
     useEffect(() => {
-        fetch(`${BASE_URL}/api/settings/demo_user`)
+        api.get(`/api/settings/${userId}`)
             .then(r => r.json())
             .then(d => {
                 setFormData({
@@ -27,7 +30,7 @@ export default function Settings() {
             })
             .catch(() => {})
             .finally(() => setLoading(false));
-    }, []);
+    }, [userId]);
 
     const handleSectorToggle = (sector) => {
         setFormData(prev => ({
@@ -41,12 +44,7 @@ export default function Settings() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            // API call to the FastAPI implementation we define next
-            const response = await fetch(`${BASE_URL}/api/settings/demo_user`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
+            const response = await api.put(`/api/settings/${userId}`, formData);
             if (!response.ok) throw new Error("Failed to save settings");
 
             setSuccess(true);

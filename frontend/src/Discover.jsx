@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, ArrowDownRight, Search, Activity, TrendingUp, Filter } from 'lucide-react';
 import TradingChart from './components/TradingChart';
 import { BASE_URL } from './api';
+import { useAuth } from './AuthContext';
 
 export default function Discover() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const userId = user?.id || 'demo_user';
     const [marketData, setMarketData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -77,7 +80,7 @@ export default function Discover() {
 
             {/* Professional Candlestick Chart */}
             <div className="mb-8">
-                <TradingChart symbol="RELIANCE.NS" userId="demo_user" />
+                <TradingChart symbol="RELIANCE.NS" userId={userId} />
             </div>
 
             {/* Search Bar */}

@@ -35,7 +35,7 @@ BROKERAGE_PERCENT = 0.0003  # 0.03% — mirrors the existing trade executor in m
 
 def _get_client():
     """Lazily import to avoid circular dependencies at module load time."""
-    from dashboard_v3 import auth_manager as auth
+    from services import auth_manager as auth
     return auth.get_client()
 
 
