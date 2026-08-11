@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Bot, Play, Square, Activity, Clock, BarChart2, Zap, AlertCircle } from 'lucide-react';
-import { BASE_URL } from './api';
+import { api } from './api';
 import useNeuralFeed from './hooks/useNeuralFeed';
 import useAgentStatus from './hooks/useAgentStatus';
 
@@ -31,10 +31,8 @@ export default function AutonomousControl() {
     const toggleAgent = async () => {
         setToggling(true);
         try {
-            const endpoint = isRunning
-                ? `${BASE_URL}/api/agent/stop`
-                : `${BASE_URL}/api/agent/start`;
-            const res = await fetch(endpoint, { method: 'POST' });
+            const endpoint = isRunning ? '/api/agent/stop' : '/api/agent/start';
+            await api.post(endpoint);
             // Confirm with the actual server state
             refetch();
         } catch { }

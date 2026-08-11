@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, ArrowUpRight, ArrowDownRight, AlertCircle, RefreshCw, Zap } from 'lucide-react';
-import { BASE_URL } from './api';
+import { api } from './api';
+import { useAuth } from './AuthContext';
 
 const DEMO = {
     cash: 100000, positions: [], portfolio_value: 100000,
@@ -25,13 +26,15 @@ function MetricCard({ label, value, delta, deltaPositive, color }) {
 
 export default function Portfolio() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const userId = user?.id || 'demo_user';
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchPortfolio = () => {
         setLoading(true);
-        fetch(`${BASE_URL}/api/portfolio/demo_user/detail`)
+        api.get(`/api/portfolio/${userId}/detail`)
             .then(r => {
                 if (!r.ok) throw new Error('Backend not reachable');
                 return r.json();
@@ -40,7 +43,7 @@ export default function Portfolio() {
             .catch(e => { setError(e.message); setData(DEMO); setLoading(false); });
     };
 
-    useEffect(() => { fetchPortfolio(); }, []);
+    useEffect(() => { fetchPortfolio(); }, [userId]);
 
     const d = data || DEMO;
     const isProfit = d.total_returns >= 0;

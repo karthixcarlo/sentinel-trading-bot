@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, HistogramSeries, createSeriesMarkers } from 'lightweight-charts';
 import { Activity } from 'lucide-react';
-import { BASE_URL } from '../api';
+import { api } from '../api';
 import { useTheme } from '../ThemeContext';
 
 export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact = false }) {
@@ -26,11 +26,11 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
                 setLoading(true);
                 setError(false);
 
-                const url = userId
-                    ? `${BASE_URL}/api/market/ohlcv/${symbol}?user_id=${encodeURIComponent(userId)}`
-                    : `${BASE_URL}/api/market/ohlcv/${symbol}`;
+                const endpoint = userId
+                    ? `/api/market/ohlcv/${symbol}?user_id=${encodeURIComponent(userId)}`
+                    : `/api/market/ohlcv/${symbol}`;
 
-                const response = await fetch(url);
+                const response = await api.get(endpoint);
                 if (!response.ok) throw new Error('API error');
                 const { ohlc, volume, trades } = await response.json();
 
