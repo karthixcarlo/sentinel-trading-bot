@@ -20,6 +20,8 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
         }
 
         let resizeObserver = null;
+        let cancelled = false;
+        const controller = new AbortController();
 
         const fetchChartData = async () => {
             try {
@@ -30,9 +32,11 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
                     ? `${BASE_URL}/api/market/ohlcv/${symbol}?user_id=${encodeURIComponent(userId)}`
                     : `${BASE_URL}/api/market/ohlcv/${symbol}`;
 
-                const response = await fetch(url);
+                const response = await fetch(url, { signal: controller.signal });
+                if (cancelled) return;
                 if (!response.ok) throw new Error('API error');
                 const { ohlc, volume, trades } = await response.json();
+                if (cancelled) return;
 
                 if (!ohlc || ohlc.length === 0) throw new Error('No data');
 
@@ -113,6 +117,7 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
                 resizeObserver.observe(chartContainerRef.current);
 
             } catch (err) {
+                if (cancelled || err.name === 'AbortError') return;
                 console.error('TradingChart Error:', err);
                 setError(true);
                 setLoading(false);
@@ -122,6 +127,10 @@ export default function TradingChart({ symbol = "RELIANCE.NS", userId, compact =
         fetchChartData();
 
         return () => {
+            // Prevents a slow response for a since-replaced symbol from
+            // building a second chart instance into the same container.
+            cancelled = true;
+            controller.abort();
             if (resizeObserver) resizeObserver.disconnect();
             if (chartRef.current) {
                 chartRef.current.remove();

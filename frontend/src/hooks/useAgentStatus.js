@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { BASE_URL } from '../api';
 
 /**
@@ -21,28 +21,30 @@ export default function useAgentStatus({
     });
     const [trades, setTrades] = useState([]);
     const [loading, setLoading] = useState(true);
+    const mountedRef = useRef(false);
 
     // Full status fetch (heavier — includes portfolio + thoughts)
     const fetchFullStatus = useCallback(() => {
         fetch(`${BASE_URL}/api/agent/status`)
             .then((r) => r.json())
-            .then((d) => { setStatus(d); setLoading(false); })
-            .catch(() => setLoading(false));
+            .then((d) => { if (mountedRef.current) { setStatus(d); setLoading(false); } })
+            .catch(() => { if (mountedRef.current) setLoading(false); });
     }, []);
 
     // Lightweight poll — just running flag + start_time
     const fetchLightStatus = useCallback(() => {
         fetch(`${BASE_URL}/api/autonomous/status`)
             .then((r) => r.json())
-            .then((d) =>
+            .then((d) => {
+                if (!mountedRef.current) return;
                 setStatus((prev) => ({
                     ...prev,
                     running: d.running,
                     status: d.status,
                     start_time: d.start_time,
                     workflow_id: d.workflow_id,
-                }))
-            )
+                }));
+            })
             .catch(() => {});
     }, []);
 
@@ -50,7 +52,7 @@ export default function useAgentStatus({
         if (!fetchTrades) return;
         fetch(`${BASE_URL}/api/agent/trades`)
             .then((r) => r.json())
-            .then((d) => setTrades(d.trades || []))
+            .then((d) => { if (mountedRef.current) setTrades(d.trades || []); })
             .catch(() => {});
     }, [fetchTrades]);
 
@@ -61,6 +63,8 @@ export default function useAgentStatus({
     }, [fetchFullStatus, fetchTradeHistory]);
 
     useEffect(() => {
+        mountedRef.current = true;
+
         // Full fetch on mount
         fetchFullStatus();
         fetchTradeHistory();
@@ -71,7 +75,10 @@ export default function useAgentStatus({
             fetchTradeHistory();
         }, pollInterval);
 
-        return () => clearInterval(interval);
+        return () => {
+            mountedRef.current = false;
+            clearInterval(interval);
+        };
     }, [pollInterval, fetchFullStatus, fetchLightStatus, fetchTradeHistory]);
 
     return { status, trades, loading, refetch };
