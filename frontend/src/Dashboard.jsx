@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Briefcase, AlertCircle, ArrowUpRight, ShieldCheck, Grid3X3, Plus, X, TrendingUp } from 'lucide-react';
 import TradingChart from './components/TradingChart';
-import { BASE_URL } from './api';
+import { api } from './api';
+import { useAuth } from './AuthContext';
 
 const DEFAULT_PINNED = ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS'];
 
@@ -17,6 +18,8 @@ function savePinnedTickers(tickers) {
 }
 
 export default function Dashboard() {
+    const { user } = useAuth();
+    const userId = user?.id || 'demo_user';
     const [portfolio, setPortfolio] = useState(null);
     const [loading, setLoading] = useState(true);
     const [pinnedTickers, setPinnedTickers] = useState(loadPinnedTickers);
@@ -24,8 +27,7 @@ export default function Dashboard() {
     const [newTicker, setNewTicker] = useState('');
 
     useEffect(() => {
-        const userId = "demo_user";
-        fetch(`${BASE_URL}/api/portfolio/${userId}`)
+        api.get(`/api/portfolio/${userId}`)
             .then(res => res.json())
             .then(data => {
                 const cash = data?.cash ?? 100000;
@@ -38,7 +40,7 @@ export default function Dashboard() {
                 setPortfolio({ cash: 100000, positions: [], orders: [] });
                 setLoading(false);
             });
-    }, []);
+    }, [userId]);
 
     const portfolioValue = useMemo(() => {
         if (!portfolio) return 0;
@@ -187,7 +189,7 @@ export default function Dashboard() {
                                     <span className="font-bold font-mono text-dark-text">{ticker}</span>
                                 </div>
                                 <div className="h-[220px]">
-                                    <TradingChart symbol={ticker} userId="demo_user" compact />
+                                    <TradingChart symbol={ticker} userId={userId} compact />
                                 </div>
                             </div>
                         ))}

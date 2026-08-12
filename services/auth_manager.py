@@ -5,11 +5,14 @@ Handles all user authentication and database operations for Project Sentinel
 """
 
 import os
+import logging
 try:
     import streamlit as st
 except ImportError:
     st = None  # Optional when running FastAPI backend (no Streamlit)
 from dotenv import load_dotenv
+
+logger = logging.getLogger("sentinel")
 
 load_dotenv()
 
@@ -95,8 +98,8 @@ def sign_out() -> None:
     try:
         client = get_client()
         client.auth.sign_out()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"auth_manager.sign_out: failed to sign out of Supabase — {e}")
     if st is not None:
         for key in ["user_id", "user_email", "user_name", "authenticated"]:
             st.session_state.pop(key, None)
@@ -215,10 +218,16 @@ def _aggregate_positions(orders: list) -> list:
     """
     Aggregate raw transaction rows into net open positions.
     BUYs increase quantity, SELLs decrease it.
+
+    Only rows with status == 'EXECUTED' count toward a position — every
+    trade currently inserted always sets this, but a pending/cancelled row
+    inserted by a future code path shouldn't silently distort holdings.
     """
     holdings = {}
 
     for order in reversed(orders):  # Chronological order
+        if order.get("status", "EXECUTED") != "EXECUTED":
+            continue
         ticker = order["ticker"]
         qty = float(order["qty"])
         price = float(order["price"])

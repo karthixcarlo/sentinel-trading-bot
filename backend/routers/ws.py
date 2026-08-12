@@ -35,9 +35,13 @@ async def websocket_neural_feed(websocket: WebSocket):
     directly to the client for the 'God Mode' dashboard.
     Accepts an optional ?token= query param for authentication.
     """
-    # Authenticate WebSocket: check optional token query param
+    # Authenticate WebSocket: a token is required whenever the server has a
+    # JWT secret configured (real deployment); demo mode (no secret) stays open.
     token = websocket.query_params.get("token")
-    if token and _JWT_SECRET:
+    if _JWT_SECRET:
+        if not token:
+            await websocket.close(code=4001, reason="Authentication required")
+            return
         try:
             _jwt.decode(token, _JWT_SECRET, algorithms=["HS256"], audience="authenticated")
         except _jwt.InvalidTokenError:

@@ -4,7 +4,9 @@ Fetches recent news headlines using web scraping
 """
 
 import logging
+import re
 from typing import List, Dict
+from urllib.parse import quote_plus
 from datetime import datetime, timedelta
 import requests
 from bs4 import BeautifulSoup
@@ -54,7 +56,7 @@ class NewsLoader:
         try:
             # Google search for recent news
             search_query = f"{company_name} stock news"
-            url = f"https://www.google.com/search?q={search_query.replace(' ', '+')}&tbm=nws"
+            url = f"https://www.google.com/search?q={quote_plus(search_query)}&tbm=nws"
             
             response = requests.get(url, headers=self.headers, timeout=10)
             
@@ -170,16 +172,39 @@ class NewsLoader:
     
     def get_news_summary(self, ticker: str) -> str:
         """
-        Get a brief text summary of recent news for AI analysis
+        Get a brief text summary of recent news for AI analysis.
+
+        This text is scraped from a public search results page and is
+        untrusted — it gets embedded directly into the prompt sent to the
+        trading AI (see agents/analyst_agent_gemini.py), so it's stripped
+        of control/formatting characters and length-capped here before it
+        ever reaches that prompt, on top of the delimiting done there.
         """
         news_items = self.get_stock_news(ticker, limit=3)
-        
+
         if not news_items:
             return "No recent news available"
-        
+
         # Combine headlines into summary
-        summary_parts = [item['title'] for item in news_items]
-        return " | ".join(summary_parts)
+        summary_parts = [_sanitize_headline(item['title']) for item in news_items]
+        return " | ".join(p for p in summary_parts if p)
+
+
+_MAX_HEADLINE_LEN = 200
+
+
+def _sanitize_headline(text: str) -> str:
+    """
+    Strips control/newline characters and caps length on scraped headline
+    text before it's joined into the AI prompt context — reduces (does not
+    by itself eliminate) the surface for prompt-injection via a manipulated
+    search-result page. See the delimiting done around this text in
+    agents/analyst_agent_gemini.py for the primary mitigation.
+    """
+    if not text:
+        return ""
+    cleaned = re.sub(r"[\x00-\x1f\x7f]+", " ", text).strip()
+    return cleaned[:_MAX_HEADLINE_LEN]
 
 
 # Convenience functions (backward compatible)

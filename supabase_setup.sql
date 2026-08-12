@@ -150,3 +150,102 @@ CREATE POLICY "Users can view own agent logs"
 CREATE POLICY "Users can insert own agent logs"
     ON public.agent_logs FOR INSERT
     WITH CHECK (auth.uid() = user_id);
+
+-- ============================================================
+-- Atomic trade execution.
+--
+-- The backend previously executed a trade as three separate round trips
+-- (read cash_balance -> check it client-side -> insert a transaction row
+-- -> update cash_balance). Two concurrent trades for the same user could
+-- each read the same starting balance/position and both "pass" their
+-- check, producing a lost update (overspend) or an oversold position —
+-- and a crash between the insert and the update left the transaction log
+-- and cash_balance permanently out of sync.
+--
+-- This function performs the whole check-then-act sequence as a single
+-- database transaction, locking the caller's portfolio row for its
+-- duration (FOR UPDATE) so a second concurrent call for the same user_id
+-- blocks until the first one commits, instead of racing on a stale read.
+-- Safe to re-run (CREATE OR REPLACE).
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.execute_trade_atomic(
+    p_user_id UUID,
+    p_ticker TEXT,
+    p_side TEXT,
+    p_qty REAL,
+    p_price REAL,
+    p_brokerage REAL
+)
+RETURNS TABLE(new_cash_balance REAL, transaction_id UUID)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    v_cash REAL;
+    v_held_qty REAL;
+    v_gross REAL;
+    v_new_cash REAL;
+    v_tx_id UUID;
+BEGIN
+    -- Defense in depth: if this function is ever called with an
+    -- authenticated (non-service-role) JWT, only allow it to act on the
+    -- caller's own portfolio. Under the backend's service-role key,
+    -- auth.uid() is NULL and this check is skipped.
+    IF auth.uid() IS NOT NULL AND auth.uid() <> p_user_id THEN
+        RAISE EXCEPTION 'unauthorized';
+    END IF;
+
+    IF p_side NOT IN ('BUY', 'SELL') THEN
+        RAISE EXCEPTION 'invalid_side';
+    END IF;
+    IF p_qty IS NULL OR p_qty <= 0 THEN
+        RAISE EXCEPTION 'invalid_quantity';
+    END IF;
+    IF p_price IS NULL OR p_price <= 0 THEN
+        RAISE EXCEPTION 'invalid_price';
+    END IF;
+
+    -- Lock this user's portfolio row for the rest of the transaction —
+    -- serializes concurrent trades for the same user instead of letting
+    -- them race on independent reads of cash_balance.
+    SELECT cash_balance INTO v_cash
+    FROM public.portfolios
+    WHERE user_id = p_user_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'portfolio_not_found';
+    END IF;
+
+    v_gross := p_qty * p_price;
+
+    IF p_side = 'BUY' THEN
+        v_new_cash := v_cash - v_gross - p_brokerage;
+        IF v_new_cash < 0 THEN
+            RAISE EXCEPTION 'insufficient_funds';
+        END IF;
+    ELSE
+        SELECT COALESCE(SUM(CASE WHEN side = 'BUY' THEN qty ELSE -qty END), 0)
+        INTO v_held_qty
+        FROM public.transactions
+        WHERE user_id = p_user_id AND ticker = p_ticker AND status = 'EXECUTED';
+
+        IF v_held_qty < p_qty THEN
+            RAISE EXCEPTION 'insufficient_shares';
+        END IF;
+
+        v_new_cash := v_cash + v_gross - p_brokerage;
+    END IF;
+
+    INSERT INTO public.transactions (user_id, ticker, side, qty, price, status)
+    VALUES (p_user_id, p_ticker, p_side, p_qty, p_price, 'EXECUTED')
+    RETURNING id INTO v_tx_id;
+
+    UPDATE public.portfolios
+    SET cash_balance = v_new_cash, updated_at = NOW()
+    WHERE user_id = p_user_id;
+
+    RETURN QUERY SELECT v_new_cash, v_tx_id;
+END;
+$$;

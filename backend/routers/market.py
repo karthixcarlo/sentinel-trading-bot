@@ -1,15 +1,20 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from datetime import datetime, timedelta
 import yfinance as yf
 from services import auth_manager as auth
-from backend.deps import validate_ticker, limiter
+from backend.deps import validate_ticker, limiter, get_optional_user
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
 
 @router.get("/ohlcv/{ticker}")
 @limiter.limit("20/minute")
-async def get_ohlcv(request: Request, ticker: str, user_id: str | None = None):
+async def get_ohlcv(
+    request: Request,
+    ticker: str,
+    user_id: str | None = None,
+    current_user: str | None = Depends(get_optional_user),
+):
     """Fetches historical daily OHLCV via yfinance, formatted for lightweight-charts."""
     try:
         ticker = validate_ticker(ticker)
@@ -41,7 +46,10 @@ async def get_ohlcv(request: Request, ticker: str, user_id: str | None = None):
             })
 
         trades = []
-        if user_id:
+        # Only include real trade markers when the caller's verified identity
+        # matches the requested user_id — prevents leaking another user's
+        # trade history through this otherwise-public chart endpoint.
+        if user_id and current_user and current_user == user_id:
             try:
                 client = auth.get_client()
                 base_ticker = ticker.replace(".NS", "").replace(".BO", "")
