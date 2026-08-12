@@ -28,6 +28,18 @@ from datetime import datetime, timezone
 
 BROKERAGE_PERCENT = 0.0003  # 0.03% — mirrors the existing trade executor in main.py
 
+# Error codes raised by the execute_trade_atomic() Postgres function
+# (see supabase_setup.sql) and recognized here to produce friendly messages.
+_KNOWN_RPC_ERRORS = (
+    "insufficient_funds",
+    "insufficient_shares",
+    "portfolio_not_found",
+    "invalid_side",
+    "invalid_quantity",
+    "invalid_price",
+    "unauthorized",
+)
+
 
 # ---------------------------------------------------------------------------
 # Private helpers
@@ -68,6 +80,7 @@ def _get_position_qty(client, user_id: str, ticker: str) -> float:
         .select("qty, side")
         .eq("user_id", user_id)
         .eq("ticker", ticker)
+        .eq("status", "EXECUTED")
         .execute()
     )
     rows = resp.data or []
@@ -99,6 +112,60 @@ def _log_agent_action(client, user_id: str, message: str, action_type: str) -> N
         print(f"BrokerEngine: agent_logs write failed (non-fatal) — {log_err}")
 
 
+def _extract_rpc_error_code(err: Exception) -> str | None:
+    """
+    The execute_trade_atomic() Postgres function signals failures by raising
+    a plain EXCEPTION whose message is one of _KNOWN_RPC_ERRORS. supabase-py
+    surfaces this as some flavor of PostgrestAPIError whose exact shape
+    varies by version, so match on the stringified error instead of a
+    specific exception type/attribute.
+    """
+    err_str = str(err)
+    for code in _KNOWN_RPC_ERRORS:
+        if code in err_str:
+            return code
+    return None
+
+
+def _execute_trade_atomic(client, user_id: str, ticker: str, side: str, quantity: float, price: float, brokerage: float) -> dict:
+    """
+    Calls the execute_trade_atomic() Postgres function (see
+    supabase_setup.sql), which locks the user's portfolio row, validates
+    funds/holdings, inserts the transaction, and updates cash_balance — all
+    inside one database transaction. This is what actually closes the
+    check-then-act race between reading a balance/position and writing the
+    result of a trade against it.
+
+    Returns {"new_cash_balance": float, "transaction_id": str}.
+    Raises RuntimeError with one of _KNOWN_RPC_ERRORS as the message on a
+    recognized failure (insufficient funds/shares/etc), or re-raises the
+    original exception for anything unexpected.
+    """
+    try:
+        resp = client.rpc("execute_trade_atomic", {
+            "p_user_id": user_id,
+            "p_ticker": ticker,
+            "p_side": side,
+            "p_qty": quantity,
+            "p_price": price,
+            "p_brokerage": brokerage,
+        }).execute()
+    except Exception as rpc_err:
+        code = _extract_rpc_error_code(rpc_err)
+        if code:
+            raise RuntimeError(code) from rpc_err
+        raise
+
+    rows = resp.data or []
+    if not rows:
+        raise RuntimeError("execute_trade_atomic returned no rows")
+    row = rows[0] if isinstance(rows, list) else rows
+    return {
+        "new_cash_balance": float(row["new_cash_balance"]),
+        "transaction_id": row.get("transaction_id"),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -111,27 +178,20 @@ def execute_order(
     current_price: float,
 ) -> dict:
     """
-    Execute a paper trade with strict accounting against Supabase.
+    Execute a paper trade with strict, atomic accounting against Supabase.
 
-    BUY flow:
-        1. Read cash_balance from `portfolios`
-        2. Check cash >= (quantity * price) + brokerage
-        3. INSERT row into `transactions`
-        4. UPDATE cash_balance in `portfolios`
-        5. Log to `agent_logs`
-
-    SELL flow:
-        1. Aggregate net qty from `transactions`
-        2. Check held_qty >= quantity
-        3. INSERT row into `transactions`
-        4. UPDATE cash_balance in `portfolios`
-        5. Log to `agent_logs`
+    The actual balance check, transaction insert, and cash_balance update
+    all happen inside a single Postgres function call (execute_trade_atomic,
+    defined in supabase_setup.sql) that locks the user's portfolio row for
+    its duration. This prevents two concurrent trades for the same user
+    from both reading a stale cash/position value and producing a lost
+    update (overspend) or an oversold position.
 
     Args:
         user_id:       Supabase user UUID (or "demo_user" for paper mode)
         ticker:        Stock symbol, e.g. "RELIANCE.NS"
         side:          "BUY" or "SELL"
-        quantity:      Number of shares (must be > 0)
+        quantity:      Number of whole shares (must be a positive integer)
         current_price: Execution price in ₹ (must be > 0)
 
     Returns:
@@ -148,6 +208,8 @@ def execute_order(
         return {"success": False, "message": f"Invalid side '{side}' — must be BUY or SELL", "order": None}
     if quantity <= 0:
         return {"success": False, "message": f"Quantity must be > 0, got {quantity}", "order": None}
+    if quantity != int(quantity):
+        return {"success": False, "message": f"Quantity must be a whole number of shares, got {quantity}", "order": None}
     if current_price <= 0:
         return {"success": False, "message": f"Price must be > 0, got {current_price}", "order": None}
 
@@ -157,38 +219,34 @@ def execute_order(
         brokerage     = round(gross_value * BROKERAGE_PERCENT, 2)
         exec_ts       = datetime.now(timezone.utc).isoformat()
 
-        # ----------------------------------------------------------------
-        # BUY
-        # ----------------------------------------------------------------
-        if side == "BUY":
-            total_debit = round(gross_value + brokerage, 2)
-            cash        = _get_cash_balance(client, user_id)
-
-            if cash < total_debit:
+        try:
+            result = _execute_trade_atomic(client, user_id, ticker, side, quantity, current_price, brokerage)
+        except RuntimeError as atomic_err:
+            code = str(atomic_err)
+            if code == "insufficient_funds":
+                total_debit = round(gross_value + brokerage, 2)
+                cash = _get_cash_balance(client, user_id)
                 msg = (
                     f"Insufficient funds to BUY {quantity}x {ticker}: "
                     f"need ₹{total_debit:,.2f}, have ₹{cash:,.2f}"
                 )
-                print(f"BrokerEngine: {msg}")
-                return {"success": False, "message": msg, "order": None}
+            elif code == "insufficient_shares":
+                held_qty = _get_position_qty(client, user_id, ticker)
+                msg = (
+                    f"Insufficient holdings to SELL {quantity}x {ticker}: "
+                    f"only {held_qty:.0f} shares held"
+                )
+            elif code == "portfolio_not_found":
+                msg = f"No portfolio found for user_id={user_id!r}"
+            else:
+                msg = f"Trade rejected: {code}"
+            print(f"BrokerEngine: {msg}")
+            return {"success": False, "message": msg, "order": None}
 
-            new_cash = round(cash - total_debit, 2)
+        new_cash = result["new_cash_balance"]
 
-            # Write transaction first — if this fails, we abort cleanly
-            client.table("transactions").insert({
-                "user_id":   user_id,
-                "ticker":    ticker,
-                "qty":       quantity,
-                "price":     current_price,
-                "side":      "BUY",
-            }).execute()
-
-            # Then update cash (if this fails, the transaction is still logged —
-            # acceptable for a paper trading system)
-            client.table("portfolios").update(
-                {"cash_balance": new_cash}
-            ).eq("user_id", user_id).execute()
-
+        if side == "BUY":
+            total_debit = round(gross_value + brokerage, 2)
             order = {
                 "ticker":      ticker,
                 "side":        "BUY",
@@ -205,40 +263,8 @@ def execute_order(
                 f"Cost ₹{total_debit:,.2f} (incl. ₹{brokerage:.2f} brokerage) | "
                 f"Cash remaining ₹{new_cash:,.2f}"
             )
-            print(f"BrokerEngine: ✅ {msg}")
-            _log_agent_action(client, user_id, msg, action_type="BUY")
-            return {"success": True, "message": msg, "order": order}
-
-        # ----------------------------------------------------------------
-        # SELL
-        # ----------------------------------------------------------------
         else:
-            held_qty = _get_position_qty(client, user_id, ticker)
-
-            if held_qty < quantity:
-                msg = (
-                    f"Insufficient holdings to SELL {quantity}x {ticker}: "
-                    f"only {held_qty:.0f} shares held"
-                )
-                print(f"BrokerEngine: {msg}")
-                return {"success": False, "message": msg, "order": None}
-
             net_proceeds = round(gross_value - brokerage, 2)
-            cash         = _get_cash_balance(client, user_id)
-            new_cash     = round(cash + net_proceeds, 2)
-
-            client.table("transactions").insert({
-                "user_id":   user_id,
-                "ticker":    ticker,
-                "qty":       quantity,
-                "price":     current_price,
-                "side":      "SELL",
-            }).execute()
-
-            client.table("portfolios").update(
-                {"cash_balance": new_cash}
-            ).eq("user_id", user_id).execute()
-
             order = {
                 "ticker":       ticker,
                 "side":         "SELL",
@@ -255,9 +281,10 @@ def execute_order(
                 f"Proceeds ₹{net_proceeds:,.2f} (incl. ₹{brokerage:.2f} brokerage) | "
                 f"Cash now ₹{new_cash:,.2f}"
             )
-            print(f"BrokerEngine: ✅ {msg}")
-            _log_agent_action(client, user_id, msg, action_type="SELL")
-            return {"success": True, "message": msg, "order": order}
+
+        print(f"BrokerEngine: ✅ {msg}")
+        _log_agent_action(client, user_id, msg, action_type=side)
+        return {"success": True, "message": msg, "order": order}
 
     except Exception as e:
         print(f"BrokerEngine: execute_order failed — {e}")
