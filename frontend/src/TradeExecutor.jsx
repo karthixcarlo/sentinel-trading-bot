@@ -29,15 +29,20 @@ export default function TradeExecutor() {
     // Debounced live price preview
     useEffect(() => {
         if (!symbol || symbol.length < 2) { setPreviewPrice(null); return; }
+        const controller = new AbortController();
         const t = setTimeout(() => {
-            fetch(`${BASE_URL}/api/market/ohlcv/${symbol}.NS`)
+            fetch(`${BASE_URL}/api/market/ohlcv/${symbol}.NS`, { signal: controller.signal })
                 .then(r => r.json())
                 .then(data => {
                     if (data.ohlc && data.ohlc.length > 0)
                         setPreviewPrice(data.ohlc[data.ohlc.length - 1].close);
-                }).catch(() => setPreviewPrice(null));
+                })
+                .catch(err => { if (err.name !== 'AbortError') setPreviewPrice(null); });
         }, 600);
-        return () => clearTimeout(t);
+        // Cancel both the pending timer and any in-flight request for a
+        // now-stale symbol, so a slow response can't overwrite the price
+        // preview for whatever the user has since typed.
+        return () => { clearTimeout(t); controller.abort(); };
     }, [symbol]);
 
     const execPrice = orderType === 'MARKET' ? (previewPrice || 0) : parseFloat(limitPrice || 0);

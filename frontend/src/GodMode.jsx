@@ -3,22 +3,6 @@ import { Activity, Terminal, ShieldAlert, Cpu, Database, CheckCircle2, Zap, BarC
 import useNeuralFeed from './hooks/useNeuralFeed';
 import useAgentStatus from './hooks/useAgentStatus';
 
-const AGENT_COLORS = {
-    Supervisor: '#8B5CF6', Scout: '#3B82F6', Analyst: '#00D09C',
-    Risk: '#F59E0B', Trader: '#EC4899', Monitor: '#14B8A6',
-    Learning: '#F97316', System: '#6B7280', Heartbeat: '#9CA3AF', default: '#6B7280'
-};
-
-function AgentBadge({ name }) {
-    const color = AGENT_COLORS[name] || AGENT_COLORS.default;
-    return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold mr-2 flex-shrink-0"
-            style={{ background: color + '20', color }}>
-            {name}
-        </span>
-    );
-}
-
 export default function GodMode() {
     const { messages: logs, connected: isConnected } = useNeuralFeed({ maxMessages: 50, filterHeartbeats: false });
     const { status: agentStatus } = useAgentStatus({ pollInterval: 5000 });
@@ -196,6 +180,3 @@ export default function GodMode() {
         </div>
     );
 }
-
-// Add a simple fade-in animation to Tailwind via global CSS or inline config
-// (Assumes you have a fade-in keyframe defined, or just use normal rendering)
