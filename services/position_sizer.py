@@ -12,6 +12,6 @@ def shares_for_allocation(cash: float, price: float) -> int:
     Must never return a negative or fractional share count -- a broker
     order for -3 shares or 4.5 shares is not a valid order.
     """
-    if price <= 0:
+    if cash <= 0 or price <= 0:
         return 0
     return int(cash / price)
