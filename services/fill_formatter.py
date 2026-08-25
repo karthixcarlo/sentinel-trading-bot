@@ -8,4 +8,5 @@ repository so this change cannot collide with anything real.
 
 def format_fill_message(symbol: str, quantity: int, price: float) -> str:
     """Human-readable confirmation text for one filled order."""
-    return f"Filled {quantity} {symbol} @ {price:.2f}"
+    display_quantity = max(quantity, 0)
+    return f"Filled {display_quantity} {symbol} @ {price:.2f}"
