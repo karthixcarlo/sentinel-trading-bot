@@ -148,6 +148,8 @@ def execute_order(
         return {"success": False, "message": f"Invalid side '{side}' — must be BUY or SELL", "order": None}
     if quantity <= 0:
         return {"success": False, "message": f"Quantity must be > 0, got {quantity}", "order": None}
+    if quantity != quantity:
+        return {"success": False, "message": f"Quantity must be a whole number, got {quantity}", "order": None}
     if quantity != int(quantity):
         return {"success": False, "message": f"Quantity must be a whole number, got {quantity}", "order": None}
     if current_price <= 0:
