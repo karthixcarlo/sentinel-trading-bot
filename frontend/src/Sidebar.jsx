@@ -46,6 +46,7 @@ export default function Sidebar({ onCommandPalette }) {
                 <button
                     onClick={toggleTheme}
                     title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                    aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                     className="p-2 rounded-lg border border-dark-border text-dark-muted
                         hover:border-accent-green/30 hover:text-accent-green transition-all duration-200"
                 >
@@ -56,6 +57,7 @@ export default function Sidebar({ onCommandPalette }) {
             <div className="px-4 pt-2">
                 <button
                     onClick={onCommandPalette}
+                    aria-label="Open command palette"
                     className="w-full flex items-center px-3 py-2 rounded-lg border border-dark-border text-dark-muted text-xs
                         hover:border-accent-green/30 hover:text-dark-text transition-colors"
                 >
@@ -100,6 +102,7 @@ export default function Sidebar({ onCommandPalette }) {
                         <button
                             onClick={handleLogout}
                             title="Log out"
+                            aria-label="Log out"
                             className="ml-2 p-1.5 rounded-lg text-dark-muted hover:text-accent-red hover:bg-accent-red/10 transition-colors flex-shrink-0"
                         >
                             <LogOut size={15} />
