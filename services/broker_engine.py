@@ -20,6 +20,7 @@ Usage:
         print(result["message"])
 """
 
+import math
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -148,7 +149,7 @@ def execute_order(
         return {"success": False, "message": f"Invalid side '{side}' — must be BUY or SELL", "order": None}
     if quantity <= 0:
         return {"success": False, "message": f"Quantity must be > 0, got {quantity}", "order": None}
-    if current_price <= 0:
+    if not math.isfinite(current_price) or current_price <= 0:
         return {"success": False, "message": f"Price must be > 0, got {current_price}", "order": None}
 
     try:
