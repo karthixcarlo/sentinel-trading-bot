@@ -146,7 +146,7 @@ def execute_order(
     # --- Input validation ---
     if side not in ("BUY", "SELL"):
         return {"success": False, "message": f"Invalid side '{side}' — must be BUY or SELL", "order": None}
-    if quantity <= 0:
+    if quantity != quantity or quantity <= 0:
         return {"success": False, "message": f"Quantity must be > 0, got {quantity}", "order": None}
     if current_price <= 0:
         return {"success": False, "message": f"Price must be > 0, got {current_price}", "order": None}
