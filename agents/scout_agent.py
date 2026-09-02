@@ -275,8 +275,16 @@ def scout_node(state: SentinelState) -> SentinelState:
             )
             return state
         
-        # Select best stock (highest momentum)
-        best_ticker, best_momentum, best_price = momentum_list[0]
+        positive_momentum_list = [entry for entry in momentum_list if entry[1] > 0]
+        
+        if not positive_momentum_list:
+            state['messages'].append(
+                HumanMessage(content="🕵️ Scout: No stocks with positive momentum in this batch")
+            )
+            return state
+        
+        # Select best stock (highest positive momentum)
+        best_ticker, best_momentum, best_price = positive_momentum_list[0]
         
         # Update state
         state['current_ticker'] = best_ticker
