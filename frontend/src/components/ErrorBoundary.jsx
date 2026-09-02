@@ -4,7 +4,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 export class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { hasError: false, error: null };
+        this.state = { hasError: false, error: null, retryCount: 0 };
     }
 
     static getDerivedStateFromError(error) {
@@ -25,7 +25,7 @@ export class ErrorBoundary extends React.Component {
                         {this.props.fallbackMessage || 'An unexpected error occurred in this section.'}
                     </p>
                     <button
-                        onClick={() => this.setState({ hasError: false, error: null })}
+                        onClick={() => this.setState((state) => ({ hasError: false, error: null, retryCount: state.retryCount + 1 }))}
                         className="flex items-center gap-2 px-4 py-2 bg-accent-green/10 text-accent-green rounded-lg hover:bg-accent-green/20 transition-colors"
                     >
                         <RefreshCw className="w-4 h-4" />
@@ -34,6 +34,6 @@ export class ErrorBoundary extends React.Component {
                 </div>
             );
         }
-        return this.props.children;
+        return <React.Fragment key={this.state.retryCount}>{this.props.children}</React.Fragment>;
     }
 }
