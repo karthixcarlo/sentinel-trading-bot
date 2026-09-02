@@ -55,6 +55,8 @@ async def get_watchlist(request: Request, current_user: str = Depends(get_curren
 async def add_to_watchlist(request: Request, req: WatchlistAddRequest, current_user: str = Depends(get_current_user)):
     """Adds a ticker to the user's watchlist."""
     ticker = req.ticker.upper().strip()
+    if not ticker:
+        raise HTTPException(status_code=400, detail="ticker must not be empty")
     # Try Supabase first
     try:
         client = auth.get_client()
