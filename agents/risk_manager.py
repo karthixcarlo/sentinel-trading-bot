@@ -13,6 +13,7 @@ Logic:
 
 import sys
 import os
+from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langchain_core.messages import AIMessage
@@ -44,11 +45,25 @@ def calculate_daily_pnl(portfolio: dict) -> float:
         float: Today's P&L (negative for losses)
     """
     daily_pnl = 0.0
+    today_utc = datetime.now(timezone.utc).date()
     
     for order in portfolio.get('orders', []):
-        # Parse order timestamp (simplified)
-        # In production, properly parse ISO timestamp
-        if 'pnl' in order:
+        timestamp = order.get('timestamp')
+        if not timestamp:
+            continue
+
+        try:
+            if isinstance(timestamp, datetime):
+                order_time = timestamp
+            else:
+                order_time = datetime.fromisoformat(str(timestamp).replace('Z', '+00:00'))
+        except (TypeError, ValueError):
+            continue
+
+        if order_time.tzinfo is None:
+            order_time = order_time.replace(tzinfo=timezone.utc)
+
+        if order_time.astimezone(timezone.utc).date() == today_utc and 'pnl' in order:
             daily_pnl += order['pnl']
     
     return daily_pnl
