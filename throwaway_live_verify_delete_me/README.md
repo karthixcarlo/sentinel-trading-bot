@@ -9,5 +9,7 @@ security-relevant *patterns* (fake secrets, unsafe deserialization,
 injection-shaped string building, etc.) spread across many small files
 so a specialist has real, distinct things to look at in each one.
 
+This disposable live-verification fixture is intentionally README-only and inert.
+
 This PR and its branch are meant to be closed/deleted after the live
 verification is done.
