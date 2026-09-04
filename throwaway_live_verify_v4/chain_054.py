@@ -1,11 +1,8 @@
-"""Throwaway fixture module 55/60 -- not real code, see ../README.md.
-
-Part of a deliberate call chain: this step appends its own number, then hands off to chain_055.step_055(). Understanding the final result of the chain means following it all the way through -- that's the point of this fixture (see ../README.md).
-"""
+"""Module 55 of 60 in a call chain. Calls into chain_055."""
 
 from throwaway_live_verify_v4.chain_055 import step_055
 
 
 def step_054(accumulated):
-    """Append this step, then continue the chain."""
+    """Append 54 to `accumulated`, then call step_055."""
     return step_055(accumulated + [54])

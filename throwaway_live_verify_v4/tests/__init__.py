@@ -1,1 +1,1 @@
-"""Throwaway fixture test package -- not real code, see ../README.md."""
+"""Test package for the chained fixture modules."""

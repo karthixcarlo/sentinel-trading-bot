@@ -1,4 +1,4 @@
-"""Throwaway fixture test -- not a real test, see ../README.md."""
+"""Test for the module chain in this package."""
 
 from throwaway_live_verify_v4.chain_000 import step_000
 

@@ -1,1 +1,1 @@
-"""Throwaway fixture package -- not real code, see ./README.md. Safe to delete."""
+"""Package of chained fixture modules; see README.md."""

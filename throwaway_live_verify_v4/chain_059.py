@@ -1,9 +1,6 @@
-"""Throwaway fixture module 60/60 -- not real code, see ../README.md.
-
-End of the chain -- returns its own step number and stops.
-"""
+"""Module 60 of 60 in a call chain. Returns the accumulated list."""
 
 
 def step_059(accumulated):
-    """Final link: append this step's number and return the full trail."""
+    """Append 59 to `accumulated` and return it."""
     return accumulated + [59]
