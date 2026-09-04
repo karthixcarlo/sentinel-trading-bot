@@ -27,5 +27,9 @@ def calculate_slippage_bps(expected_price: float, fill_price: float) -> float:
 def is_fill_within_tolerance(expected_price: float, fill_price: float, max_bps: float = MAX_SLIPPAGE_BPS) -> bool:
     """
     True if the fill's slippage is within the allowed tolerance.
+
+    Only unfavorable slippage (a worse fill than expected) should count
+    against the tolerance -- a fill that's better than expected shouldn't
+    ever be rejected.
     """
-    return abs(calculate_slippage_bps(expected_price, fill_price)) <= max_bps
+    return calculate_slippage_bps(expected_price, fill_price) <= max_bps
