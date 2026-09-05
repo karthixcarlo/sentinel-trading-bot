@@ -1,6 +1,6 @@
 # Live Verification Note (disposable)
 
-This file exists solely to exercise a real AIDA-MATE review end to end for a
+This file exists solely to exercise a real AIDA-MATE end-to-end review for a
 live verification pass. It is disposable and carries no functional meaning
 for this repository — safe to delete at any time.
 
