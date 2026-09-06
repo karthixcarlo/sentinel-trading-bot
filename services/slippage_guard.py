@@ -24,8 +24,19 @@ def calculate_slippage_bps(expected_price: float, fill_price: float) -> float:
     return (fill_price - expected_price) / expected_price * 10000
 
 
-def is_fill_within_tolerance(expected_price: float, fill_price: float, max_bps: float = MAX_SLIPPAGE_BPS) -> bool:
+def is_fill_within_tolerance(expected_price: float, fill_price: float, side: str = "BUY", max_bps: float = MAX_SLIPPAGE_BPS) -> bool:
     """
-    True if the fill's slippage is within the allowed tolerance.
+    True if the fill's slippage is within the allowed tolerance for the trade side.
     """
-    return abs(calculate_slippage_bps(expected_price, fill_price)) <= max_bps
+    slippage_bps = calculate_slippage_bps(expected_price, fill_price)
+
+    if abs(slippage_bps) > max_bps:
+        return False
+
+    side = side.upper()
+    if side == "BUY":
+        return slippage_bps <= max_bps
+    if side == "SELL":
+        return slippage_bps >= -max_bps
+
+    raise ValueError("side must be 'BUY' or 'SELL'")
