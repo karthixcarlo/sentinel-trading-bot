@@ -146,10 +146,12 @@ def execute_order(
     # --- Input validation ---
     if side not in ("BUY", "SELL"):
         return {"success": False, "message": f"Invalid side '{side}' — must be BUY or SELL", "order": None}
-    # NOTE: quantity is not checked for being a whole number, so a
-    # fractional value passes validation and reaches execution.
     if quantity <= 0:
         return {"success": False, "message": f"Quantity must be > 0, got {quantity}", "order": None}
+    if quantity != quantity:
+        return {"success": False, "message": f"Quantity must be a whole number, got {quantity}", "order": None}
+    if quantity != int(quantity):
+        return {"success": False, "message": f"Quantity must be a whole number, got {quantity}", "order": None}
     if current_price <= 0:
         return {"success": False, "message": f"Price must be > 0, got {current_price}", "order": None}
 
